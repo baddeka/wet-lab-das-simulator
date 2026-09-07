@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAS Branch Simulator</title>
+<meta name="description" content="Interactive two-compartment model of the DAS to H2O2 to OxyR to GFP biosensor: set the reagents and the culture and see whether a healthy urine sample can still be told apart from one at the colorectal-cancer cutoff.">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="DAS Branch Simulator">
+<meta property="og:description" content="Interactive two-compartment model of the DAS to H2O2 to OxyR to GFP biosensor: set the reagents and the culture and see whether a healthy urine sample can still be told apart from one at the colorectal-cancer cutoff.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129515;</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+/* reset the Artifact runtime used to supply */
+html{color-scheme:light dark}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<style>
+:root{
+  --ground:#FBFBF9; --surface:#FFFFFF; --sunk:#F4F6F3;
+  --ink:#151C18; --muted:#67736C; --faint:#93A099;
+  --rule:#E0E5E0; --rule-strong:#C8D1CA;
+  --accent:#17654A; --accent-soft:#E4EFE8; --accent-line:#8FC0A9; --on-accent:#FFFFFF;
+  --warn:#9E6C1E; --warn-soft:#F7EEDD;
+  --bad:#9B3A31; --bad-soft:#F8E8E5;
+  --shadow:0 1px 2px rgba(21,28,24,.05);
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E1311; --surface:#151B18; --sunk:#1B2320;
+    --ink:#E7ECE8; --muted:#8B978F; --faint:#6B7772;
+    --rule:#253028; --rule-strong:#334037;
+    --accent:#4CBE89; --accent-soft:#163027; --accent-line:#2F7355; --on-accent:#0E1311;
+    --warn:#D2A055; --warn-soft:#2C2317;
+    --bad:#D2705F; --bad-soft:#2E1B18;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E1311; --surface:#151B18; --sunk:#1B2320;
+  --ink:#E7ECE8; --muted:#8B978F; --faint:#6B7772;
+  --rule:#253028; --rule-strong:#334037;
+  --accent:#4CBE89; --accent-soft:#163027; --accent-line:#2F7355; --on-accent:#0E1311;
+  --warn:#D2A055; --warn-soft:#2C2317;
+  --bad:#D2705F; --bad-soft:#2E1B18;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0;font-family:var(--serif);font-weight:600;text-wrap:balance;letter-spacing:-.008em}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* ---------- shell ---------- */
+.masthead{border-bottom:1px solid var(--rule);background:var(--surface)}
+.masthead-in{max-width:1420px;margin:0 auto;padding:22px 28px 20px;display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between}
+.brand h1{font-size:23px;line-height:1.2}
+.brand p{margin:5px 0 0;color:var(--muted);max-width:62ch;font-size:13px}
+.chain{margin:9px 0 0;font-family:var(--mono);font-size:11.5px;color:var(--faint);letter-spacing:.02em}
+.chain b{color:var(--accent);font-weight:500}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets .lbl{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint);width:100%;margin-bottom:1px}
+button.preset{font-family:var(--sans);font-size:12px;padding:5px 11px;border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink);border-radius:2px;cursor:pointer;transition:background .12s,border-color .12s}
+button.preset:hover{background:var(--sunk);border-color:var(--accent-line)}
+button.preset[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+button.preset:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.wrap{max-width:1420px;margin:0 auto;padding:22px 28px 60px;display:grid;grid-template-columns:335px minmax(0,1fr);gap:26px;align-items:start}
+
+/* ---------- controls ---------- */
+.rail{display:flex;flex-direction:column;gap:16px}
+.group{background:var(--surface);border:1px solid var(--rule);border-radius:3px;box-shadow:var(--shadow)}
+.group > h2{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding:11px 14px 9px;border-bottom:1px solid var(--rule)}
+.group-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:13px}
+.ctl{display:grid;gap:5px}
+.ctl-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.ctl-name{font-size:12.5px;color:var(--ink)}
+.ctl-val{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12.5px;font-weight:500;color:var(--accent);white-space:nowrap}
+.ctl-note{font-size:11px;color:var(--faint);margin-top:-1px}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:16px;background:transparent;cursor:pointer;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-moz-range-track{height:2px;background:var(--rule-strong);border-radius:2px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;margin-top:-5.5px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--accent)}
+input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--accent)}
+input[type=range]:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:2px}
+.seg{display:flex;border:1px solid var(--rule-strong);border-radius:2px;overflow:hidden}
+.seg button{flex:1;font-family:var(--sans);font-size:11.5px;padding:6px 2px;border:0;border-right:1px solid var(--rule-strong);background:var(--surface);color:var(--muted);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.switch button{position:relative;width:38px;height:20px;border-radius:10px;border:1px solid var(--rule-strong);background:var(--sunk);cursor:pointer;padding:0;flex:none}
+.switch button::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--faint);transition:transform .14s,background .14s}
+.switch button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-line)}
+.switch button[aria-pressed="true"]::after{transform:translateX(18px);background:var(--accent)}
+.switch button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- results ---------- */
+.results{display:flex;flex-direction:column;gap:18px;min-width:0}
+.verdict{background:var(--surface);border:1px solid var(--rule);border-left:3px solid var(--accent);border-radius:3px;box-shadow:var(--shadow);padding:16px 18px;display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
+.verdict.warn{border-left-color:var(--warn)} .verdict.bad{border-left-color:var(--bad)}
+.verdict-fold{display:flex;flex-direction:column;gap:1px}
+.verdict-fold .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--faint)}
+.verdict-fold .v{font-family:var(--mono);font-size:38px;font-weight:500;line-height:1.05;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.verdict-fold .u{font-size:11.5px;color:var(--muted)}
+.verdict-say{display:flex;flex-direction:column;gap:6px;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;font-size:11.5px;font-weight:600;letter-spacing:.02em;padding:3px 9px;border-radius:2px;background:var(--accent-soft);color:var(--accent)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.verdict-say p{margin:0;font-size:12.5px;color:var(--muted);max-width:64ch}
+
+.eq{background:var(--sunk);border:1px solid var(--rule);border-radius:3px;padding:14px 18px}
+.eq h3{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:9px}
+.eq-line{font-family:var(--mono);font-size:15px;display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;line-height:1.9}
+.eq-line .op{color:var(--faint)}
+.term{display:inline-flex;flex-direction:column;align-items:center;gap:0;padding:1px 7px;border-radius:2px;background:var(--surface);border:1px solid var(--rule)}
+.term .sym{font-size:11px;color:var(--muted);letter-spacing:.02em}
+.term .val{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.term.res{background:var(--accent-soft);border-color:var(--accent-line)}
+.term.res .val,.term.res .sym{color:var(--accent)}
+
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:11px 13px;box-shadow:var(--shadow);min-width:0}
+.tile .k{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);display:block;margin-bottom:3px}
+.tile .v{font-family:var(--mono);font-size:19px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em;display:block}
+.tile .s{font-size:11px;color:var(--muted);display:block;margin-top:1px}
+.tile .v.ok{color:var(--accent)} .tile .v.warn{color:var(--warn)} .tile .v.bad{color:var(--bad)}
+
+.panel{background:var(--surface);border:1px solid var(--rule);border-radius:3px;box-shadow:var(--shadow);overflow:hidden}
+.panel > h3{font-family:var(--sans);font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);padding:11px 16px 9px;border-bottom:1px solid var(--rule)}
+.panel .cap{padding:0 16px 13px;margin:0;font-size:11.5px;color:var(--muted);max-width:78ch}
+.plot{padding:14px 16px 4px}
+.plot svg{display:block;width:100%;height:auto;overflow:visible}
+.charts2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+
+.diag{list-style:none;margin:0;padding:0}
+.diag li{display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:start;padding:11px 16px;border-bottom:1px solid var(--rule)}
+.diag li:last-child{border-bottom:0}
+.diag .sev{width:3px;align-self:stretch;border-radius:2px;background:var(--accent);min-height:20px}
+.diag .sev.warn{background:var(--warn)} .diag .sev.bad{background:var(--bad)} .diag .sev.ok{background:var(--accent-line)}
+.diag .t{font-size:12.5px;font-weight:600}
+.diag .d{font-size:12px;color:var(--muted);margin-top:1px;max-width:80ch}
+.diag .d b{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--ink)}
+
+footer{max-width:1420px;margin:0 auto;padding:0 28px 46px;color:var(--faint);font-size:11.5px;max-width:1420px}
+footer p{margin:0 0 5px;max-width:96ch}
+footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+@media (max-width:1080px){
+  .wrap{grid-template-columns:1fr;padding:18px 18px 46px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .charts2{grid-template-columns:1fr}
+  .masthead-in{padding:18px 18px 16px}
+  footer{padding:0 18px 40px}
+  .verdict{grid-template-columns:1fr;gap:12px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="masthead">
+  <div class="masthead-in">
+    <div class="brand">
+      <h1>DAS Branch Simulator</h1>
+      <p>Two-compartment model of the urinary diacetylspermine sensor. Set the reagents and the culture, and see whether a healthy sample can still be told apart from one at the colorectal-cancer cutoff.</p>
+      <p class="chain">DAS &rarr; <b>DAS oxidase</b> &rarr; H<sub>2</sub>O<sub>2</sub> &rarr; <b>OxyR</b> &rarr; GFP &rarr; phone reader</p>
+    </div>
+    <div class="presets" id="presets">
+      <span class="lbl">Load a scenario</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- ================= CONTROLS ================= -->
+  <div class="rail" id="rail">
+    <section class="group">
+      <h2>1 &middot; Sample preparation</h2>
+      <div class="group-body" id="g-sample"></div>
+    </section>
+    <section class="group">
+      <h2>2 &middot; Cells and enzyme</h2>
+      <div class="group-body" id="g-cells"></div>
+    </section>
+    <section class="group">
+      <h2>3 &middot; Assay and reader</h2>
+      <div class="group-body" id="g-assay"></div>
+    </section>
+  </div>
+
+  <!-- ================= RESULTS ================= -->
+  <div class="results">
+    <div class="verdict" id="verdict">
+      <div class="verdict-fold">
+        <span class="k">Fold, cutoff vs healthy</span>
+        <span class="v" id="v-fold">1.00</span>
+        <span class="u" id="v-foldsub">F(250) / F(150) nmol&middot;g<sup>&minus;1</sup> creatinine</span>
+      </div>
+      <div class="verdict-say">
+        <span class="chip" id="v-chip">&mdash;</span>
+        <p id="v-text"></p>
+      </div>
+    </div>
+
+    <div class="eq">
+      <h3>Signal-to-background, term by term</h3>
+      <div class="eq-line" id="eqline"></div>
+    </div>
+
+    <div class="tiles" id="tiles"></div>
+
+    <section class="panel">
+      <h3>Dose&ndash;response across the clinical window</h3>
+      <div class="plot" id="plot-dose"></div>
+      <p class="cap" id="cap-dose"></p>
+    </section>
+
+    <div class="charts2">
+      <section class="panel">
+        <h3>Cytoplasmic H<sub>2</sub>O<sub>2</sub> during the assay</h3>
+        <div class="plot" id="plot-h2o2"></div>
+        <p class="cap">Solid: the sample. Dashed: the blank, set by the cell&rsquo;s own peroxide production. The rule marks the half-activation point of OxyR.</p>
+      </section>
+      <section class="panel">
+        <h3>Reporter accumulation</h3>
+        <div class="plot" id="plot-gfp"></div>
+        <p class="cap">Fluorescence relative to the blank at the moment of reading. The gap between the two lines is the whole measurement.</p>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h3>What is limiting the measurement now</h3>
+      <ul class="diag" id="diag"></ul>
+    </section>
+  </div>
+</div>
+
+<footer>
+  <p><b>Model.</b> Cytoplasm and medium are treated as separate compartments exchanging H<sub>2</sub>O<sub>2</sub> at <code>k_mem &asymp; 90 s&#8315;&#185;</code>. The cytoplasm is quasi-steady on a millisecond timescale; the medium is integrated explicitly because at low cell density it equilibrates over minutes. Anchors: endogenous production <code>P_endo &asymp; 14 &micro;M/s</code> and resting cytoplasmic <code>0.02 &micro;M</code> (Seaver &amp; Imlay 2001, which together force <code>k_scav &asymp; 700 s&#8315;&#185;</code>); OxyR half-activation at <code>0.1 &micro;M</code> cytoplasmic H<sub>2</sub>O<sub>2</sub> (Aslund 1999; Imlay reviews); oxidase <code>kcat 158 s&#8315;&#185;</code>, <code>Km 83 &micro;M</code> (Bakke 2007). The model reproduces the independently measured nine-fold medium-to-cytoplasm gradient without fitting.</p>
+  <p><b>Read it as a design tool, not a prediction.</b> Three quantities are unmeasured and any of them can close the branch: whether DAS crosses the inner membrane at all, how selective the oxidase is against the more abundant urinary acetylpolyamines, and whether creatinine can be measured in parallel.</p>
+</footer>
+
+<script>
+"use strict";
+const LN2 = Math.log(2);
+
+/* ============================ model ============================ */
+const P0 = {
+  V_das:250, creatinine:1.0, conc_factor:12, sample_frac:0.50,
+  interferent:0, selectivity:100, cr_norm:false,
+  OD:0.05, phi_per_OD:8e-4, peri_frac:0.16,
+  k_mem:90, k_scav:700, P_endo:4.0, k_chem:0,
+  kcat:158, Km:83, E:1.5e-3, alpha:1.0, mode:"free",
+  K_oxyr:0.10, n_hill:1.0,
+  beta:5e-3, leak:2e-5, k_mat:LN2/360, mu_pre:LN2/2400, growing:false,
+  T_read:1800, cv:0.05, n_rep:3
+};
+const phi   = p => p.phi_per_OD * p.OD;
+const netF  = p => p.conc_factor * p.sample_frac * (p.cr_norm ? 1/p.creatinine : 1);
+const dasIn = p => p.V_das * p.creatinine / 1000 * netF(p);
+const intIn = p => p.interferent * netF(p);
+const muA   = p => p.growing ? LN2/2400 : 0;
+
+function sim(p, withDas, N){
+  N = N || 600;
+  const kmem=p.k_mem, ksc=p.k_scav, f=phi(p), P=p.P_endo, T=p.T_read;
+  const ktot = kmem + ksc;
+  const b = f*kmem*ksc/ktot + p.k_chem;
+  const Kn = Math.pow(p.K_oxyr, p.n_hill);
+  const fox = x => { const xn = Math.pow(x, p.n_hill); return xn/(Kn + xn); };
+  const xf  = (y, vc) => (P + vc + kmem*y)/ktot;
+
+  let y  = (f*kmem*P/ktot)/b;
+  const x0 = xf(y, 0);
+  const mu = muA(p), kmat = p.k_mat;
+  let m = (p.beta*fox(x0) + p.leak)/(kmat + p.mu_pre);
+  let g = kmat*m/p.mu_pre;
+  const g0 = g;
+  let S = withDas ? dasIn(p) : 0, I = withDas ? intIn(p) : 0;
+  const S0 = S;
+
+  let Ecap, sc;
+  if (p.mode === "cyto")      { Ecap = f*p.kcat*p.E*p.alpha; sc = p.alpha; }
+  else if (p.mode === "peri") { Ecap = p.kcat*p.E*p.peri_frac*f; sc = 1; }
+  else                        { Ecap = p.kcat*p.E; sc = 1; }
+
+  const dt = T/N, kt = kmat + mu, e = Math.exp(-kt*dt);
+  const eg = mu > 1e-9 ? Math.exp(-mu*dt) : 1;
+  let xpk = x0, xlast = x0;
+  const tr = [{t:0, x:x0, g:g}];
+  for (let i = 0; i < N; i++){
+    const kS0 = Ecap/(p.Km + sc*(S + I));
+    const nsub = Math.max(1, Math.ceil(kS0*dt/0.05), Math.ceil(b*dt/0.25));
+    const h = dt/nsub;
+    let facc = 0;
+    for (let j = 0; j < nsub; j++){
+      const kS = Ecap/(p.Km + sc*(S + I)), kI = kS/p.selectivity;
+      const Sn = S*Math.exp(-kS*h), In = I*Math.exp(-kI*h);
+      const prod = ((S - Sn) + (I - In))/h;
+      S = Sn; I = In;
+      const vc = p.mode === "cyto" ? prod/f : 0;
+      const vm = p.mode === "cyto" ? 0 : prod;
+      const a  = vm + f*kmem*(P + vc)/ktot;
+      const yss = a/b;
+      y = yss + (y - yss)*Math.exp(-b*h);
+      const x = xf(y, vc);
+      if (x > xpk) xpk = x;
+      xlast = x;
+      facc += fox(x)*h;
+    }
+    const fbar = facc/dt;
+    const m2 = m*e + (p.beta*fbar + p.leak)/kt*(1 - e);
+    if (mu > 1e-9) g = g*eg + (kmat*0.5*(m + m2)/mu)*(1 - eg);
+    else           g = g + kmat*0.5*(m + m2)*dt;
+    m = m2;
+    tr.push({t:(i+1)*dt, x:xlast, g:g});
+  }
+  return {g:g, g0:g0, xpk:xpk, xrest:x0, S:S, S0:S0,
+          conv:S0 > 0 ? 1 - S/S0 : 1, tr:tr};
+}
+
+const CACHE = new Map();
+function run(p, withDas, N){
+  const key = JSON.stringify(p) + "|" + withDas + "|" + (N||600);
+  if (CACHE.has(key)) return CACHE.get(key);
+  if (CACHE.size > 400) CACHE.clear();
+  const r = sim(p, withDas, N);
+  CACHE.set(key, r);
+  return r;
+}
+const fluor = (p, N) => run(p, true, N).g / run(p, false, N).g;
+
+/* ============================ controls ============================ */
+const S = Object.assign({}, P0);
+const lg  = (v, a, b) => (Math.log(v) - Math.log(a))/(Math.log(b) - Math.log(a));
+const unlg= (t, a, b) => Math.exp(Math.log(a) + t*(Math.log(b) - Math.log(a)));
+const fmt = (v, d) => v.toLocaleString("en-US", {minimumFractionDigits:d, maximumFractionDigits:d});
+function sig(v, n){
+  n = n || 3;
+  if (v === 0) return "0";
+  const a = Math.abs(v);
+  if (a >= 1e5 || a < 1e-3){
+    const ex = Math.floor(Math.log10(a));
+    return (v/Math.pow(10, ex)).toFixed(1) + "×10" + sup(ex);
+  }
+  const dp = Math.min(6, Math.max(0, n - 1 - Math.floor(Math.log10(a))));
+  return v.toFixed(dp).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+function sup(n){
+  const map = {"-":"⁻","0":"⁰","1":"¹","2":"²","3":"³","4":"⁴","5":"⁵","6":"⁶","7":"⁷","8":"⁸","9":"⁹"};
+  return String(n).split("").map(c => map[c] || c).join("");
+}
+
+const CTRLS = [
+ {g:"g-sample", key:"V_das", name:"Urinary DAS in this sample", min:60, max:600, step:5,
+  disp:v => fmt(v,0) + " nmol/g cr", note:"healthy median 150 &middot; cutoff 200 (M) / 250 (F)"},
+ {g:"g-sample", key:"creatinine", name:"Urine creatinine", min:0.3, max:2.5, step:0.05,
+  disp:v => fmt(v,2) + " g/L", note:"hydration; normal range 0.5 to 2"},
+ {g:"g-sample", key:"cr_norm", type:"switch", name:"Normalise to creatinine",
+  note:"scale each sample&rsquo;s concentration factor by 1/Cr"},
+ {g:"g-sample", key:"conc_factor", name:"Concentration factor", min:1, max:60, step:1,
+  disp:v => fmt(v,0) + "×", note:"solid-phase extraction of the raw urine"},
+ {g:"g-sample", key:"sample_frac", name:"Sample in the well", min:0.05, max:0.6, step:0.01,
+  disp:v => fmt(v*100,0) + " % v/v", note:v => "net delivery " + fmt(netF(S),1) + "×"},
+ {g:"g-sample", key:"interferent", name:"Cross-reactive polyamines", min:0, max:6, step:0.25,
+  disp:v => fmt(v,2) + " µM", note:"acetylspermidine and acetylspermine in urine"},
+ {g:"g-sample", key:"selectivity", name:"Enzyme selectivity for DAS", min:0, max:1, step:0.001, log:[10,10000],
+  disp:v => sig(v,2) + "×", note:"(kcat/Km) DAS over the interferent"},
+
+ {g:"g-cells", key:"mode", type:"seg", name:"Where the oxidase sits",
+  opts:[["cyto","Cytoplasm"],["peri","Periplasm"],["free","In sample"]]},
+ {g:"g-cells", key:"E", name:"Enzyme in its compartment", min:0, max:1, step:0.001, log:[1e-5,300],
+  disp:v => sig(v,2) + " µM", note:v => "converts " + fmt(100*run(S,true).conv,0) + " % of the DAS"},
+ {g:"g-cells", key:"alpha", name:"DAS uptake into cytoplasm", min:0, max:1, step:0.001, log:[0.001,10],
+  disp:v => sig(v,2) + "×", note:"inside/outside ratio; acetylated polyamines transport poorly",
+  only:() => S.mode === "cyto"},
+ {g:"g-cells", key:"OD", name:"Cell density", min:0, max:1, step:0.001, log:[0.003,3],
+  disp:v => "OD₆₀₀ " + sig(v,2), note:v => "cytoplasm is " + sig(phi(S),2) + " of the volume"},
+ {g:"g-cells", key:"k_scav", name:"Peroxide scavenging", min:0, max:1, step:0.001, log:[3,900],
+  disp:v => sig(v,3) + " s⁻¹", note:v => "wild type 700 &middot; Hpx&#8315; about 5 &middot; resting cytoplasm " + sig(S.P_endo/v,2) + " µM"},
+ {g:"g-cells", key:"P_endo", name:"Endogenous H₂O₂ production", min:1, max:20, step:0.5,
+  disp:v => fmt(v,1) + " µM/s", note:"growing cells about 14, carbon-limited about 4"},
+ {g:"g-cells", key:"growing", type:"switch", name:"Cells growing during assay",
+  note:"growth dilutes reporter and discards the early signal"},
+
+ {g:"g-assay", key:"T_read", name:"Incubation before reading", min:600, max:7200, step:60,
+  disp:v => fmt(v/60,0) + " min", note:"background accumulates while you wait"},
+ {g:"g-assay", key:"cv", name:"Reader CV per measurement", min:0.01, max:0.20, step:0.005,
+  disp:v => fmt(v*100,1) + " %", note:"total assay variation, not optics alone"},
+ {g:"g-assay", key:"n_rep", name:"Replicates", min:1, max:8, step:1,
+  disp:v => fmt(v,0), note:"technical replicates per sample"},
+ {g:"g-assay", key:"k_chem", name:"Peroxide sink in the medium", min:0, max:1, step:0.001, log:[1e-5,0.3],
+  disp:v => v < 2e-5 ? "none" : sig(v,2) + " s⁻¹", note:"urate and ascorbate carried over from urine"}
+];
+
+function build(){
+  CTRLS.forEach(c => {
+    const host = document.getElementById(c.g);
+    const el = document.createElement("div");
+    el.className = "ctl"; el.dataset.key = c.key;
+    if (c.type === "switch"){
+      el.innerHTML = '<div class="switch"><span class="ctl-name">' + c.name +
+        '</span><button type="button" role="switch" aria-checked="false" aria-pressed="false" aria-label="' + c.name + '"></button></div>' +
+        (c.note ? '<div class="ctl-note">' + c.note + '</div>' : '');
+      const btn = el.querySelector("button");
+      btn.addEventListener("click", () => { S[c.key] = !S[c.key]; clearPreset(); render(); });
+      c._el = btn;
+    } else if (c.type === "seg"){
+      el.innerHTML = '<div class="ctl-top"><span class="ctl-name">' + c.name + '</span></div>' +
+        '<div class="seg">' + c.opts.map(o => '<button type="button" aria-pressed="false" data-v="' + o[0] + '">' + o[1] + '</button>').join("") + '</div>';
+      el.querySelectorAll(".seg button").forEach(b =>
+        b.addEventListener("click", () => { S[c.key] = b.dataset.v; clearPreset(); render(); }));
+      c._el = el;
+    } else {
+      el.innerHTML = '<div class="ctl-top"><span class="ctl-name">' + c.name +
+        '</span><span class="ctl-val"></span></div><input type="range" min="' + c.min + '" max="' + c.max +
+        '" step="' + c.step + '" aria-label="' + c.name + '">' +
+        '<div class="ctl-note"></div>';
+      const inp = el.querySelector("input");
+      inp.addEventListener("input", () => {
+        S[c.key] = c.log ? unlg(+inp.value, c.log[0], c.log[1]) : +inp.value;
+        clearPreset(); render();
+      });
+      c._el = inp; c._val = el.querySelector(".ctl-val"); c._note = el.querySelector(".ctl-note");
+    }
+    c._row = el;
+    host.appendChild(el);
+  });
+}
+
+function syncControls(){
+  CTRLS.forEach(c => {
+    if (c.only) c._row.hidden = !c.only();
+    if (c.type === "switch"){
+      c._el.setAttribute("aria-checked", S[c.key] ? "true" : "false");
+      c._el.setAttribute("aria-pressed", S[c.key] ? "true" : "false");
+    } else if (c.type === "seg"){
+      c._el.querySelectorAll(".seg button").forEach(b =>
+        b.setAttribute("aria-pressed", b.dataset.v === S[c.key] ? "true" : "false"));
+    } else {
+      const v = S[c.key];
+      c._el.value = c.log ? lg(v, c.log[0], c.log[1]) : v;
+      c._val.textContent = c.disp(v);
+      if (c.note) c._note.innerHTML = typeof c.note === "function" ? c.note(v) : c.note;
+    }
+  });
+}
+
+/* ============================ presets ============================ */
+const PRESETS = [
+ {n:"Original draft", p:{OD:1.0, k_scav:700, conc_factor:15, sample_frac:0.10, E:1e-2, mode:"free",
+   T_read:3600, P_endo:14, growing:true, interferent:0, cr_norm:false, k_chem:0, alpha:1}},
+ {n:"Hpx⁻ knockout", p:{OD:1.0, k_scav:5, conc_factor:15, sample_frac:0.10, E:1e-2, mode:"free",
+   T_read:3600, P_endo:14, growing:true, interferent:0, cr_norm:false, k_chem:0, alpha:1}},
+ {n:"Recommended", p:{OD:0.05, k_scav:700, conc_factor:12, sample_frac:0.50, E:1.5e-3, mode:"free",
+   T_read:1800, P_endo:4, growing:false, interferent:0, cr_norm:true, k_chem:0, alpha:1}},
+ {n:"Periplasmic display", p:{OD:0.05, k_scav:700, conc_factor:12, sample_frac:0.50, E:100, mode:"peri",
+   T_read:1800, P_endo:4, growing:false, interferent:0, cr_norm:true, k_chem:0, alpha:1}},
+ {n:"Real urine", p:{OD:0.05, k_scav:700, conc_factor:12, sample_frac:0.50, E:1.5e-3, mode:"free",
+   T_read:1800, P_endo:4, growing:false, interferent:2, selectivity:100, cr_norm:false, k_chem:0.005, alpha:1}}
+];
+let activePreset = 2;
+function clearPreset(){ activePreset = -1; }
+function buildPresets(){
+  const host = document.getElementById("presets");
+  PRESETS.forEach((pr, i) => {
+    const b = document.createElement("button");
+    b.className = "preset"; b.type = "button"; b.textContent = pr.n;
+    b.addEventListener("click", () => {
+      Object.assign(S, P0, pr.p);
+      activePreset = i; render();
+    });
+    pr._el = b; host.appendChild(b);
+  });
+}
+
+/* ============================ charts ============================ */
+const NS = "http://www.w3.org/2000/svg";
+function svg(w, h){ const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", "0 0 " + w + " " + h); return s; }
+function add(par, tag, at, txt){
+  const e = document.createElementNS(NS, tag);
+  for (const k in at) e.setAttribute(k, at[k]);
+  if (txt != null) e.textContent = txt;
+  par.appendChild(e); return e;
+}
+const CS = () => getComputedStyle(document.documentElement);
+function tok(n){ return CS().getPropertyValue(n).trim(); }
+
+function frame(host, W, H, M, xd, yd, xlab, ylab, xticks, yticks, fmtX, fmtY){
+  host.innerHTML = "";
+  const s = svg(W, H); host.appendChild(s);
+  const rule = tok("--rule"), faint = tok("--faint"), muted = tok("--muted");
+  const px = v => M.l + (v - xd[0])/(xd[1] - xd[0])*(W - M.l - M.r);
+  const py = v => H - M.b - (v - yd[0])/(yd[1] - yd[0])*(H - M.t - M.b);
+  yticks.forEach(v => {
+    add(s, "line", {x1:M.l, x2:W - M.r, y1:py(v), y2:py(v), stroke:rule, "stroke-width":1});
+    add(s, "text", {x:M.l - 7, y:py(v) + 3.5, "text-anchor":"end", fill:faint,
+      "font-size":10, "font-family":"IBM Plex Mono, monospace"}, fmtY(v));
+  });
+  xticks.forEach(v => {
+    add(s, "text", {x:px(v), y:H - M.b + 15, "text-anchor":"middle", fill:faint,
+      "font-size":10, "font-family":"IBM Plex Mono, monospace"}, fmtX(v));
+  });
+  add(s, "line", {x1:M.l, x2:W - M.r, y1:H - M.b, y2:H - M.b, stroke:tok("--rule-strong"), "stroke-width":1});
+  add(s, "text", {x:M.l + (W - M.l - M.r)/2, y:H - 3, "text-anchor":"middle", fill:muted,
+    "font-size":10.5, "font-family":"IBM Plex Sans, sans-serif"}, xlab);
+  add(s, "text", {x:11, y:M.t + (H - M.t - M.b)/2, "text-anchor":"middle", fill:muted,
+    "font-size":10.5, "font-family":"IBM Plex Sans, sans-serif",
+    transform:"rotate(-90 11 " + (M.t + (H - M.t - M.b)/2) + ")"}, ylab);
+  return {s:s, px:px, py:py};
+}
+const path = pts => pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" ");
+function niceStep(raw){
+  if (!(raw > 0)) return 1;
+  const ex = Math.pow(10, Math.floor(Math.log10(raw)));
+  return [1, 2, 2.5, 5, 10].find(k => k*ex >= raw*0.999)*ex;
+}
+function nice(max){
+  if (max <= 0) return [0, 1, [0, 0.5, 1]];
+  const ex = Math.pow(10, Math.floor(Math.log10(max)));
+  const m = [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10].find(k => k*ex >= max) * ex;
+  const t = []; for (let i = 0; i <= 4; i++) t.push(m*i/4);
+  return [0, m, t];
+}
+
+function drawDose(){
+  const host = document.getElementById("plot-dose");
+  const W = 780, H = 300, M = {l:52, r:18, t:14, b:34};
+  const xs = []; for (let v = 60; v <= 600; v += 20) xs.push(v);
+  const base = Object.assign({}, S);
+  const mid = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v}), 260)]);
+  let band = null;
+  if (!S.cr_norm){
+    const lo = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v, creatinine:0.5}), 260)]);
+    const hi = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v, creatinine:2.0}), 260)]);
+    band = {lo:lo, hi:hi};
+  }
+  let vals = mid.map(d => d[1]);
+  if (band) vals = vals.concat(band.hi.map(d => d[1]), band.lo.map(d => d[1]));
+  const fH = fluor(Object.assign({}, base, {V_das:150}), 260);
+  const halfBand = fH*(Math.exp(2.8*S.cv*Math.sqrt(2/S.n_rep)) - 1);
+  vals = vals.concat([fH + halfBand, fH - halfBand]);
+  let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+  const pad = Math.max((hi - lo)*0.16, hi*0.01);
+  lo = Math.max(0, lo - pad); hi = hi + pad;
+  const step = niceStep((hi - lo)/4);
+  lo = Math.floor(lo/step)*step; hi = Math.ceil(hi/step)*step;
+  const ticks = []; for (let v = lo; v <= hi + step*0.01; v += step) ticks.push(+v.toFixed(6));
+  const dpY = step >= 1 ? 1 : (step >= 0.1 ? 2 : 3);
+  const g = frame(host, W, H, M, [60, 600], [lo, hi], "urinary DAS (nmol per g creatinine)",
+    "fluorescence / blank", [100, 200, 300, 400, 500, 600], ticks,
+    v => String(v), v => v.toFixed(dpY));
+  const acc = tok("--accent"), warn = tok("--warn"), faint = tok("--faint"), bad = tok("--bad");
+
+  // the band a reading at the healthy median cannot be told apart from
+  add(g.s, "rect", {x:M.l, y:g.py(fH + halfBand), width:W - M.l - M.r,
+    height:Math.max(1, g.py(fH - halfBand) - g.py(fH + halfBand)),
+    fill:bad, "fill-opacity":0.10});
+  add(g.s, "line", {x1:M.l, x2:W - M.r, y1:g.py(fH + halfBand), y2:g.py(fH + halfBand),
+    stroke:bad, "stroke-width":1, "stroke-dasharray":"4 3"});
+  add(g.s, "text", {x:M.l + 6, y:g.py(fH + halfBand) - 5, fill:bad, "font-size":9.5,
+    "font-family":"IBM Plex Mono, monospace"}, "decision limit at " + (100*S.cv).toFixed(1) + " % CV, n = " + S.n_rep);
+
+  if (band){
+    const poly = band.hi.map(d => [g.px(d[0]), g.py(d[1])])
+      .concat(band.lo.slice().reverse().map(d => [g.px(d[0]), g.py(d[1])]));
+    add(g.s, "path", {d:path(poly) + " Z", fill:warn, "fill-opacity":0.13, stroke:"none"});
+  }
+  [[150, "healthy 150"], [250, "cutoff 250"]].forEach(m => {
+    add(g.s, "line", {x1:g.px(m[0]), x2:g.px(m[0]), y1:M.t, y2:H - M.b, stroke:faint,
+      "stroke-width":1, "stroke-dasharray":"3 3"});
+    add(g.s, "text", {x:g.px(m[0]) + 4, y:M.t + 11, fill:faint, "font-size":10,
+      "font-family":"IBM Plex Mono, monospace"}, m[1]);
+  });
+  add(g.s, "path", {d:path(mid.map(d => [g.px(d[0]), g.py(d[1])])), fill:"none",
+    stroke:acc, "stroke-width":2, "stroke-linejoin":"round"});
+  [150, 250].forEach(v => {
+    const y = fluor(Object.assign({}, base, {V_das:v}), 260);
+    add(g.s, "circle", {cx:g.px(v), cy:g.py(y), r:3.5, fill:acc, stroke:tok("--surface"), "stroke-width":1.5});
+  });
+  const cap = document.getElementById("cap-dose");
+  cap.innerHTML = band
+    ? "The shaded band is the same curve at creatinine 0.5 and 2.0 g/L. Where it is wider than the gap between the two markers, hydration alone can move a healthy sample above a cancer-positive one. Turn on creatinine normalisation to collapse it."
+    : "Creatinine normalisation is on, so every sample arrives at the assay at the same effective creatinine and the curve is a function of the clinical quantity alone.";
+}
+
+function drawTime(){
+  const p = S;
+  const a = run(p, true), b = run(p, false);
+  const acc = tok("--accent"), muted = tok("--muted"), bad = tok("--bad"), faint = tok("--faint");
+  const Tm = p.T_read/60;
+  const xt = [0, Tm*0.25, Tm*0.5, Tm*0.75, Tm].map(v => Math.round(v));
+
+  // --- H2O2 ---
+  let hx = document.getElementById("plot-h2o2");
+  const ymaxH = Math.max(a.xpk, b.xrest, p.K_oxyr*1.25);
+  const nzH = nice(ymaxH*1.08);
+  let W = 380, H = 216, M = {l:52, r:14, t:12, b:32};
+  let g = frame(hx, W, H, M, [0, Tm], [0, nzH[1]], "minutes", "cytoplasmic H₂O₂ (µM)",
+    xt, nzH[2], v => String(v), v => v < 1 ? v.toFixed(3) : v.toFixed(2));
+  add(g.s, "line", {x1:M.l, x2:W - M.r, y1:g.py(p.K_oxyr), y2:g.py(p.K_oxyr),
+    stroke:bad, "stroke-width":1, "stroke-dasharray":"5 3"});
+  if (g.py(p.K_oxyr) > M.t + 10)
+    add(g.s, "text", {x:W - M.r - 2, y:g.py(p.K_oxyr) - 4, "text-anchor":"end", fill:bad,
+      "font-size":9.5, "font-family":"IBM Plex Mono, monospace"}, "OxyR K½");
+  add(g.s, "path", {d:path(b.tr.map(d => [g.px(d.t/60), g.py(d.x)])), fill:"none",
+    stroke:muted, "stroke-width":1.4, "stroke-dasharray":"4 3"});
+  add(g.s, "path", {d:path(a.tr.map(d => [g.px(d.t/60), g.py(d.x)])), fill:"none",
+    stroke:acc, "stroke-width":2, "stroke-linejoin":"round"});
+
+  // --- GFP ---
+  hx = document.getElementById("plot-gfp");
+  const gs = a.tr.map(d => d.g/b.g0), gb = b.tr.map(d => d.g/b.g0);
+  const nzG = nice(Math.max(gs[gs.length-1], gb[gb.length-1])*1.08);
+  g = frame(hx, W, H, M, [0, Tm], [Math.min(1, nzG[2][0]), nzG[1]], "minutes", "fluorescence / blank at t₀",
+    xt, nzG[2], v => String(v), v => v.toFixed(2));
+  add(g.s, "path", {d:path(gb.map((v, i) => [g.px(b.tr[i].t/60), g.py(v)])), fill:"none",
+    stroke:muted, "stroke-width":1.4, "stroke-dasharray":"4 3"});
+  add(g.s, "path", {d:path(gs.map((v, i) => [g.px(a.tr[i].t/60), g.py(v)])), fill:"none",
+    stroke:acc, "stroke-width":2, "stroke-linejoin":"round"});
+  const last = gs.length - 1;
+  add(g.s, "circle", {cx:g.px(a.tr[last].t/60), cy:g.py(gs[last]), r:3.2, fill:acc,
+    stroke:tok("--surface"), "stroke-width":1.5});
+}
+
+/* ============================ render ============================ */
+function render(){
+  syncControls();
+  PRESETS.forEach((pr, i) => pr._el.setAttribute("aria-pressed", i === activePreset ? "true" : "false"));
+
+  const sig250 = Object.assign({}, S, {V_das:250});
+  const sig150 = Object.assign({}, S, {V_das:150});
+  const fold = fluor(sig250) / fluor(sig150);
+  const cur = run(S, true), blank = run(S, false);
+  const sb = (cur.g - blank.g)/blank.g;
+  const sd = S.cv*Math.sqrt(2/S.n_rep);
+  const z = Math.log(Math.max(fold, 1 + 1e-12))/sd;
+  const cvMax = fold > 1 ? Math.log(fold)/(2.8*Math.sqrt(2/S.n_rep)) : 0;
+
+  // verdict
+  const vd = document.getElementById("verdict"), chip = document.getElementById("v-chip");
+  document.getElementById("v-fold").textContent = fold.toFixed(3);
+  let cls, chipTxt, say;
+  if (z >= 2.8){
+    cls = ""; chipTxt = "Separable";
+    say = "The two classes are " + z.toFixed(1) + " standard errors apart with " + S.n_rep +
+      " replicates. A reader with a CV up to " + (100*cvMax).toFixed(1) + " % would still call them correctly.";
+  } else if (z >= 1.6){
+    cls = "warn"; chipTxt = "Marginal";
+    say = "Only " + z.toFixed(1) + " standard errors apart. This needs a reader CV of " +
+      (100*cvMax).toFixed(1) + " % or better, against the " + (100*S.cv).toFixed(1) + " % set here — add replicates or open up the signal.";
+  } else {
+    cls = "bad"; chipTxt = "Not separable";
+    say = "The biological difference is " + ((fold - 1)*100).toFixed(1) +
+      " %, far inside the noise. No reader resolves this; the signal has to be opened up first.";
+  }
+  vd.className = "verdict" + (cls ? " " + cls : "");
+  chip.className = "chip" + (cls ? " " + cls : "");
+  chip.textContent = chipTxt;
+  document.getElementById("v-text").textContent = say;
+
+  // master equation
+  const S0 = dasIn(sig250), f = phi(S), T = S.T_read;
+  const budget = S0/(f*S.P_endo*T);
+  document.getElementById("eqline").innerHTML =
+    term("S₀", sig(S0,3) + " µM") + op("/ (") +
+    term("φ", sig(f,2)) + op("×") +
+    term("P_endo", sig(S.P_endo,3)) + op("×") +
+    term("T", sig(T,3) + " s") + op(")") +
+    op("×") + term("s", "0.40") + op("=") +
+    term("S/B", sb.toFixed(3), true);
+
+  // tiles
+  const conv = 100*cur.conv;
+  const tiles = [
+    ["Signal over background", sb.toFixed(3), sb >= 0.3 ? "ok" : (sb >= 0.05 ? "warn" : "bad"),
+     "at " + fmt(S.V_das,0) + " nmol/g"],
+    ["Resting cytoplasmic H₂O₂", sig(cur.xrest,2) + " µM",
+     cur.xrest > 0.5*S.K_oxyr ? "bad" : (cur.xrest > 0.25*S.K_oxyr ? "warn" : "ok"),
+     "OxyR K½ is " + S.K_oxyr.toFixed(2) + " µM"],
+    ["Peak cytoplasmic H₂O₂", sig(cur.xpk,2) + " µM",
+     cur.xpk > 3*S.K_oxyr ? "warn" : "ok",
+     cur.xpk > 3*S.K_oxyr ? "saturating the switch" : "on the responsive slope"],
+    ["DAS converted", conv.toFixed(0) + " %", conv >= 90 ? "ok" : (conv >= 50 ? "warn" : "bad"),
+     conv >= 90 ? "budget fully realised" : "enzyme or time short"]
+  ];
+  document.getElementById("tiles").innerHTML = tiles.map(t =>
+    '<div class="tile"><span class="k">' + t[0] + '</span><span class="v ' + t[2] + '">' + t[1] +
+    '</span><span class="s">' + t[3] + '</span></div>').join("");
+
+  drawDose(); drawTime();
+
+  // diagnostics
+  const d = [];
+  if (!S.cr_norm){
+    const hiHealthy = fluor(Object.assign({}, S, {V_das:150, creatinine:2.0}));
+    const loCancer  = fluor(Object.assign({}, S, {V_das:250, creatinine:0.5}));
+    if (hiHealthy >= loCancer)
+      d.push(["bad", "Hydration inverts the classes",
+        "A healthy sample at Cr 2.0 g/L reads <b>" + hiHealthy.toFixed(3) +
+        "</b> against <b>" + loCancer.toFixed(3) + "</b> for a cancer-positive sample at Cr 0.5. " +
+        "Creatinine has to be measured in parallel, or the concentration step made sample-specific."]);
+    else
+      d.push(["warn", "Creatinine is not being corrected",
+        "The classes still separate here, but the hydration band on the dose–response is live and narrows the margin."]);
+  }
+  if (cur.xrest > 0.5*S.K_oxyr)
+    d.push(["bad", "OxyR is already on in the blank",
+      "Resting cytoplasmic H₂O₂ is <b>" + sig(cur.xrest,2) + " µM</b> against a half-activation point of <b>" +
+      S.K_oxyr.toFixed(2) + " µM</b>. Scavenging is too low: the reporter spends its dynamic range on the background. Raise k_scav back toward wild type."]);
+  if (conv < 85)
+    d.push(["warn", "The DAS is not all being converted",
+      "Only <b>" + conv.toFixed(0) + " %</b> of the delivered biomarker is turned over in " + Math.round(S.T_read/60) +
+      " min. " + (S.mode === "peri" ? "The periplasm is only <b>" + sig(phi(S)*S.peri_frac,2) +
+      "</b> of the assay volume, so periplasmic loading has to be high at this cell density."
+      : S.mode === "cyto" ? "Check the uptake ratio as well as the expression level."
+      : "Raise the enzyme concentration.")]);
+  if (S.mode === "cyto" && S.alpha < 0.2)
+    d.push(["bad", "DAS is barely reaching the enzyme",
+      "At an uptake ratio of <b>" + sig(S.alpha,2) + "</b> the cytoplasmic architecture fails outright. Native Pot transporters handle N-acetylated polyamines poorly, and nothing downstream compensates."]);
+  if (cur.xpk > 3*S.K_oxyr)
+    d.push(["warn", "Delivery is overshooting the switch",
+      "Peak cytoplasmic H₂O₂ is <b>" + sig(cur.xpk,2) + " µM</b>, well past the responsive band. " +
+      "Signal-to-background keeps rising while the fold change falls. Reduce the net delivery factor or raise the cell density."]);
+  if (f*S.P_endo*S.T_read > 0.35 && S.OD > 0.3)
+    d.push(["warn", "Cell density is the dominant term",
+      "At OD₆₀₀ <b>" + sig(S.OD,2) + "</b> the biomarker is shared among <b>" + sig(f,2) +
+      "</b> of the volume as cytoplasm. Diluting to OD₆₀₀ 0.05 is worth about <b>" +
+      (S.OD/0.05).toFixed(0) + "×</b> and costs nothing but buffer."]);
+  if (S.interferent > 0){
+    const clean = fluor(Object.assign({}, S, {V_das:250, interferent:0}))/fluor(Object.assign({}, S, {V_das:150, interferent:0}));
+    const lost = (clean - fold)/Math.max(clean - 1, 1e-9);
+    d.push([lost > 0.4 ? "bad" : (lost > 0.15 ? "warn" : "ok"), "Cross-reactive polyamines are compressing the signal",
+      "They cost <b>" + (100*lost).toFixed(0) + " %</b> of the fold change (" + clean.toFixed(3) +
+      " clean against " + fold.toFixed(3) + " here). The interference is an additive offset that does not scale with DAS, so it flattens the ratio rather than shifting it."]);
+  }
+  if (S.growing)
+    d.push(["warn", "Growth is discarding early signal",
+      "The biomarker arrives once while reporter is diluted continuously. Assaying non-growing cells also lowers the endogenous flux, which is the denominator of the whole design."]);
+  if (S.k_chem > 0.02)
+    d.push(["warn", "The medium is eating the peroxide",
+      "At <b>" + sig(S.k_chem,2) + " s⁻¹</b> the matrix sink competes with the cells for the signal. Cation-exchange clean-up removes the urate and ascorbate that cause it."]);
+  if (!d.length)
+    d.push(["ok", "Nothing is obviously limiting",
+      "The reporter sits in its linear range, the biomarker is fully converted, and the confounders are controlled. What remains is the reader specification: a CV of <b>" +
+      (100*cvMax).toFixed(1) + " %</b> or better across " + S.n_rep + " replicates."]);
+  document.getElementById("diag").innerHTML = d.map(x =>
+    '<li><span class="sev ' + x[0] + '"></span><div><div class="t">' + x[1] + '</div><div class="d">' + x[2] + '</div></div></li>').join("");
+}
+function term(sym, val, res){
+  return '<span class="term' + (res ? " res" : "") + '"><span class="sym">' + sym + '</span><span class="val">' + val + '</span></span>';
+}
+function op(t){ return '<span class="op">' + t + '</span>'; }
+
+build(); buildPresets();
+Object.assign(S, P0, PRESETS[2].p);
+render();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawDose(); drawTime(); });
+</script>
+</body>
+</html>
