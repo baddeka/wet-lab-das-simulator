@@ -1,0 +1,7 @@
+# Normalise to LF in the repository. The first version of index.html was
+# uploaded through the GitHub web UI with CRLF endings, which turned a
+# 169-line change into a 1673-line diff and made review useless.
+* text=auto eol=lf
+*.png binary
+*.pdf binary
+*.docx binary
