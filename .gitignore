@@ -3,3 +3,12 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .claude/
+
+# The write-up drafts and their figures. They live in this folder so nothing is
+# lost, but they are deliberately not published: this repository is public, and
+# putting a draft on GitHub Pages is a separate decision from publishing the
+# code. Delete these four lines to commit them.
+*.docx
+*.pdf
+page*.png
+limits*.png
