@@ -1,0 +1,14 @@
+unit,to_uM_factor,needs,log_base,note
+uM,1,,,Target unit.
+umol/L,1,,,Identical to uM.
+nmol/L,0.001,,,
+nmol/mL,1,,,1 nmol/mL = 1 umol/L = 1 uM.
+umol/g creatinine,1,creatinine_g_per_L,,Multiplied by urine creatinine in g/L: 1 umol/g x 1 g/L = 1 uM.
+nmol/mg creatinine,1,creatinine_g_per_L,,1 nmol/mg is numerically identical to 1 umol/g.
+nmol/g creatinine,0.001,creatinine_g_per_L,,Unit of the legacy V_das parameter.
+umol/mol creatinine,1,creatinine_mol_per_L,,Multiplied by urine creatinine in mol/L.
+log2 ratio,,,2,"Unitless log2 ratio. Fold change is 2^(sick-healthy), not a quotient. No absolute concentration recoverable."
+pmol/mg tissue,,,,Per unit tissue mass. Not convertible to a volumetric concentration.
+nmol/mg DNA,,,,Per unit DNA mass. Not convertible to a volumetric concentration.
+unitless,,,,Ratio reported by the authors without units. No absolute concentration recoverable.
+units not stated,,,,The source paper does not state the units.

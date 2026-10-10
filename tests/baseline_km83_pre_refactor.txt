@@ -1,0 +1,416 @@
+BASELINE of igem-das-model BEFORE refactor
+captured 2026-10-05T12:03:36Z | git 637ca14
+das_model.DEFAULTS Km = 83.0
+
+######## check1.py ########
+=== 1. literature anchors ===
+  WT cytoplasmic H2O2 at rest      : 0.0200 uM   (Seaver & Imlay ~0.02)
+  medium/cytoplasm gradient        : 8.8 x    (Seaver & Imlay ~9x)
+  DAS in raw urine, 200 nmol/g, Cr=1: 0.200 uM
+  DAS presented to assay, 15x, 10% : 0.300 uM
+
+=== 2. does the master equation hold?  S/B = S0/(phi*P_endo*T) * dlnF/dlnH ===
+  OD= 1.00 phi=8.0e-04 | S/B=  0.0000 | budget=  0.0074 | S/B per budget=0.000
+  OD= 0.30 phi=2.4e-04 | S/B=  0.0000 | budget=  0.0248 | S/B per budget=0.000
+  OD= 0.10 phi=8.0e-05 | S/B=  0.0000 | budget=  0.0744 | S/B per budget=0.000
+  OD= 0.03 phi=2.4e-05 | S/B=  0.0000 | budget=  0.2480 | S/B per budget=0.000
+  OD= 0.01 phi=8.0e-06 | S/B=  0.0000 | budget=  0.7440 | S/B per budget=0.000
+
+=== 3. localization: does it change the integrated signal? ===
+  peri  | S/B=0.0029 | DAS left=2.75e-01 uM | peak cyt H2O2=0.0201 uM
+  free  | S/B=0.0301 | DAS left=3.18e-04 uM | peak cyt H2O2=0.0261 uM
+  cyto  | S/B=0.0000 | DAS left=3.00e-01 uM | peak cyt H2O2=0.0200 uM
+
+=== 4. Lever B: is knocking out scavengers good? ===
+  k_scav= 700.0 | rest cyt H2O2= 0.020 uM (K_oxyr=0.10) | S/B=0.0000 | blank GFP=2.569
+  k_scav= 400.0 | rest cyt H2O2= 0.035 uM (K_oxyr=0.10) | S/B=0.0000 | blank GFP=3.963
+  k_scav= 200.0 | rest cyt H2O2= 0.070 uM (K_oxyr=0.10) | S/B=0.0000 | blank GFP=6.259
+  k_scav=  50.0 | rest cyt H2O2= 0.280 uM (K_oxyr=0.10) | S/B=0.0000 | blank GFP=11.153
+  k_scav=  20.0 | rest cyt H2O2= 0.700 uM (K_oxyr=0.10) | S/B=0.0000 | blank GFP=13.233
+  k_scav=   5.0 | rest cyt H2O2= 2.800 uM (K_oxyr=0.10) | S/B=0.0000 | blank GFP=14.595
+
+=== 5. Lever C: does more enzyme help? ===
+  E= 1.0e-05 uM | DAS left=3.00e-01 uM | S/B=0.0000
+  E= 1.0e-04 uM | DAS left=3.00e-01 uM | S/B=0.0000
+  E= 1.0e-03 uM | DAS left=3.00e-01 uM | S/B=0.0000
+  E= 1.0e-02 uM | DAS left=3.00e-01 uM | S/B=0.0000
+  E= 1.0e+00 uM | DAS left=2.75e-01 uM | S/B=0.0029
+
+######## check2.py ########
+=== 2. master equation:  S/B = [S0/(phi*P_endo*T)] * (log-sensitivity) * (timing) ===
+  OD= 1.00 | S/B=  0.0030 | budget=  0.0074 | ratio=0.400
+  OD= 0.30 | S/B=  0.0099 | budget=  0.0248 | ratio=0.401
+  OD= 0.10 | S/B=  0.0301 | budget=  0.0744 | ratio=0.405
+  OD= 0.03 | S/B=  0.1049 | budget=  0.2480 | ratio=0.423
+  OD= 0.01 | S/B=  0.2760 | budget=  0.7440 | ratio=0.371
+
+=== 3. localization at realistic per-compartment [E] ===
+  cyto  E=  10.0 uM in own compartment | DAS converted= 99.6% | S/B=0.0299
+  peri  E=  30.0 uM in own compartment | DAS converted= 92.8% | S/B=0.0312
+  free  E=   0.0 uM in own compartment | DAS converted= 99.9% | S/B=0.0301
+  cyto with no DAS uptake (alpha=0.01): 0.00191
+
+=== 4. Lever B: knocking out the scavengers ===
+  k_scav   rest H2O2   S/B        fold(F/F0)   verdict
+   700.0     0.020 uM  0.03013    1.0301      linear regime
+   400.0     0.035 uM  0.02669    1.0267      linear regime
+   200.0     0.070 uM  0.02101    1.0210      near K_oxyr
+    50.0     0.280 uM  0.00960    1.0096      near K_oxyr
+    20.0     0.700 uM  0.00479    1.0048      OxyR saturated
+     5.0     2.800 uM  0.00100    1.0010      OxyR saturated
+
+=== 5. Lever C: more enzyme ===
+  E= 1.0e-06 uM | DAS converted=  0.7% | S/B=0.0002
+  E= 1.0e-05 uM | DAS converted=  6.6% | S/B=0.0023
+  E= 1.0e-04 uM | DAS converted= 49.5% | S/B=0.0172
+  E= 1.0e-03 uM | DAS converted= 99.9% | S/B=0.0301
+  E= 1.0e-02 uM | DAS converted=100.0% | S/B=0.0247
+  E= 1.0e+00 uM | DAS converted=100.0% | S/B=0.0236
+
+=== 6. periplasmic capacity vs OD (the real trade-off) ===
+  OD= 1.00 E_peri=   10 uM | converted=100.0% | S/B=0.0029
+  OD= 1.00 E_peri=  100 uM | converted=100.0% | S/B=0.0025
+  OD= 0.30 E_peri=   10 uM | converted= 92.8% | S/B=0.0104
+  OD= 0.30 E_peri=  100 uM | converted=100.0% | S/B=0.0087
+  OD= 0.10 E_peri=   10 uM | converted= 58.3% | S/B=0.0202
+  OD= 0.10 E_peri=  100 uM | converted=100.0% | S/B=0.0291
+  OD= 0.03 E_peri=   10 uM | converted= 23.1% | S/B=0.0245
+  OD= 0.03 E_peri=  100 uM | converted= 92.8% | S/B=0.1023
+
+######## check3.py ########
+scenario                                                    S/B F250/F150    max CV brightness
+-----------------------------------------------------------------------------------------------
+A. document as written (WT, OD 1, 15x, growing)          0.0030   1.0015      0.1%   2.06e-03
+B. + Lever B as written (Hpx- knockout)                  0.0001   1.0001      0.0%   1.17e-02
+C. keep scavengers, drop cell density to OD 0.1          0.0301   1.0143      0.6%   2.12e-04
+D. + more of the sample in the well (50% v/v)            0.1354   1.0539      2.3%   2.33e-04
+E. + OD 0.01 and a 30 min read                           0.6094   1.1194      4.9%   3.31e-05
+F. + non-growing, carbon-limited cells (P_endo 14 -> 4)     1.8374   1.2040      8.1%   3.12e-05
+G. + 40x concentration instead of 15x                    3.1288   1.1190      4.9%   4.54e-05
+
+required: F250/F150 must beat reader CV.  With n=3 and z=2.8,
+a reader at CV=5% needs fold >= 1.121 ; at CV=10% needs fold >= 1.257
+
+=== how far does the hydration confounder swamp the signal? ===
+  Cr=0.5 g/L : F(healthy)=4.3061  F(cutoff)=5.0540
+  Cr=1.0 g/L : F(healthy)=5.3066  F(cutoff)=5.9382
+  Cr=2.0 g/L : F(healthy)=6.1311  F(cutoff)=6.5753
+  -> a CRC patient at Cr=0.5 gives 5.0540, a healthy one at Cr=2.0 gives 6.1311
+     i.e. the classes INVERT unless creatinine is measured separately.
+
+######## check4.py ########
+=== optimum concentration factor (fold F250/F150 is what classifies) ===
+  Fx    DAS in assay   rest H2O2   peak cyt H2O2   S/B     fold    max CV
+     5      0.500 uM     0.006 uM      0.039 uM    0.870  1.2035    8.1%
+    10      1.000 uM     0.006 uM      0.071 uM    1.437  1.2168    8.6%
+    15      1.500 uM     0.006 uM      0.104 uM    1.837  1.2040    8.1%
+    20      2.000 uM     0.006 uM      0.149 uM    2.253  1.1825    7.3%
+    30      3.000 uM     0.006 uM      0.244 uM    2.788  1.1455    5.9%
+    40      4.000 uM     0.006 uM      0.343 uM    3.113  1.1199    5.0%
+    60      6.000 uM     0.006 uM      0.549 uM    3.486  1.0885    3.7%
+   100     10.000 uM     0.006 uM      0.975 uM    3.831  1.0581    2.5%
+   200     20.000 uM     0.006 uM      2.072 uM    4.125  1.0312    1.3%
+  -> best fold at 10x concentration
+
+=== optimum cell density (fold vs brightness) ===
+   OD     phi      fold    max CV   brightness (rel.)
+   0.300 2.4e-04  1.1388    5.7%   4.70e-04
+   0.100 8.0e-05  1.2044    8.1%   2.22e-04
+   0.030 2.4e-05  1.1972    7.9%   9.91e-05
+   0.010 8.0e-06  1.1584    6.4%   3.91e-05
+   0.003 2.4e-06  1.1398    5.7%   1.24e-05
+   0.001 8.0e-07  1.1344    5.5%   4.19e-06
+
+=== cross-reactive polyamines (urine has 5-20x more than DAS) ===
+  selectivity  interferent/DAS   fold F250/F150   verdict
+        10           5 x          1.1584       usable
+        10          20 x          1.1584       usable
+       100           5 x          1.1584       usable
+       100          20 x          1.1584       usable
+      1000           5 x          1.1584       usable
+      1000          20 x          1.1584       usable
+
+=== matrix H2O2 sink (urate/ascorbate carried over from urine) ===
+  k_chem= 0.000 s^-1 -> fold=1.1584
+  k_chem= 0.001 s^-1 -> fold=1.1954
+  k_chem= 0.010 s^-1 -> fold=1.1923
+  k_chem= 0.100 s^-1 -> fold=1.0460
+
+######## check5.py ########
+DAS in assay at cutoff : 1.50 uM
+
+=== SELECTIVITY SPEC (interferent is an absolute urinary level) ===
+  interferent   in assay   selectivity   fold F250/F150   verdict
+    0.0 uM       0.0 uM         10        1.1977       ok
+    1.0 uM       6.0 uM         10        1.0810       swamped
+    1.0 uM       6.0 uM        100        1.1732       ok
+    1.0 uM       6.0 uM       1000        1.1954       ok
+    2.0 uM      12.0 uM         10        1.0483       swamped
+    2.0 uM      12.0 uM        100        1.1555       ok
+    2.0 uM      12.0 uM       1000        1.1934       ok
+    5.0 uM      30.0 uM         10        1.0203       swamped
+    5.0 uM      30.0 uM        100        1.1228       marginal
+    5.0 uM      30.0 uM       1000        1.1879       ok
+
+######## doc_numbers.py ########
+### TABLE 2 REPLACEMENT: the two H2O2 sources, per litre of cytoplasm, over a 1 h assay
+  OD 1.00 (phi=8.0e-04): endogenous =    50400 uM | DAS 0.15 ->   187.5 uM (0.37%) | DAS 0.25 ->   312.5 uM (0.62%) | DAS 1.00 ->  1250.0 uM (2.48%)
+  OD 0.10 (phi=8.0e-05): endogenous =    50400 uM | DAS 0.15 ->  1875.0 uM (3.72%) | DAS 0.25 ->  3125.0 uM (6.20%) | DAS 1.00 -> 12500.0 uM (24.80%)
+  OD 0.01 (phi=8.0e-06): endogenous =    50400 uM | DAS 0.15 -> 18750.0 uM (37.20%) | DAS 0.25 -> 31250.0 uM (62.00%) | DAS 1.00 -> 125000.0 uM (248.02%)
+
+### RECOMMENDED OPERATING POINT
+  healthy   150 nmol/g -> 0.900 uM in assay | peak cyt H2O2 0.041 uM | S/B 0.70 | F 2.337
+  cutoff M  200 nmol/g -> 1.200 uM in assay | peak cyt H2O2 0.053 uM | S/B 0.88 | F 2.581
+  cutoff F  250 nmol/g -> 1.500 uM in assay | peak cyt H2O2 0.065 uM | S/B 1.04 | F 2.799
+  high CRC  400 nmol/g -> 2.400 uM in assay | peak cyt H2O2 0.100 uM | S/B 1.42 | F 3.333
+  fold F(250)/F(150) = 1.198   -> requires reader CV <= 7.9% at n=3
+  resting cytoplasmic H2O2 = 0.0057 uM (K_oxyr = 0.10 uM) -> linear regime
+
+### LEVER TABLE: each term of  S/B = S0 / (phi * P_endo * T)
+  starting point (raw urine, OD 1, growing, 1 h): S/B = 0.00170
+  + concentrate urine 12x and use 50%% v/v x6.0    cumulative x6        S/B = 0.011
+  + drop cell density OD 1 -> 0.05         x20.0   cumulative x120      S/B = 0.200
+  + read at 30 min instead of 60           x2.0    cumulative x240      S/B = 0.265
+  + non-growing, carbon-limited cells      x3.5    cumulative x840      S/B = 0.877
+
+### SELECTIVITY SPEC
+  interferent  5x DAS, selectivity     10 -> fold 1.198
+  interferent  5x DAS, selectivity    100 -> fold 1.198
+  interferent  5x DAS, selectivity   1000 -> fold 1.198
+  interferent  5x DAS, selectivity  10000 -> fold 1.198
+  interferent 20x DAS, selectivity     10 -> fold 1.198
+  interferent 20x DAS, selectivity    100 -> fold 1.198
+  interferent 20x DAS, selectivity   1000 -> fold 1.198
+  interferent 20x DAS, selectivity  10000 -> fold 1.198
+
+### HYDRATION INVERSION at the recommended operating point
+  CRC, dilute urine              V=250 nmol/g, Cr=0.5 g/L -> F = 2.203
+  healthy, concentrated urine    V=150 nmol/g, Cr=2.0 g/L -> F = 2.994
+  CRC, typical                   V=250 nmol/g, Cr=1.0 g/L -> F = 2.799
+  healthy, typical               V=150 nmol/g, Cr=1.0 g/L -> F = 2.337
+
+######## doc_tables.py ########
+### TABLE 4  lever ladder, evaluated at the CRC cutoff (250 nmol/g, Cr 1 g/L)
+  step                                             factor        S/B
+  raw urine, OD 1.0, growing cells, 60 min read         -     0.0021
+  + concentrate 12x, sample at 50% v/v                 x6     0.0139
+  + cell density OD 1.0 -> 0.05                       x20     0.2387
+  + read at 30 min instead of 60                       x2     0.3151
+  + non-growing, carbon-limited cells                x3.5     1.0351
+
+### TABLE 5  net delivery factor: the optimum is not the maximum
+  conc x   net x      DAS in assay   peak cyt   fold    
+  4        2.0        0.50           0.025      1.124   
+  8        4.0        1.00           0.045      1.175   
+  12       6.0        1.50           0.065      1.198   
+  16       8.0        2.00           0.097      1.201   
+  24       12.0       3.00           0.168      1.191   
+  40       20.0       5.00           0.332      1.166   
+  80       40.0       10.00          0.794      1.135   
+
+### TABLE 6  where the enzyme sits
+  cyto  [E]= 10.000 uM own compartment | converted  74.3% | fold 1.186
+  peri  [E]= 30.000 uM own compartment | converted  47.8% | fold 1.130
+  free  [E]=  0.001 uM own compartment | converted  96.7% | fold 1.198
+  cyto with 100x poorer DAS uptake (alpha=0.01): fold 1.007
+  peri needs [E]_peri >= 30 uM at OD 0.05 to convert in 30 min
+     [E]_peri=   3.0 uM -> converted   6.3%
+     [E]_peri=  10.0 uM -> converted  19.4%
+     [E]_peri=  30.0 uM -> converted  47.8%
+     [E]_peri= 100.0 uM -> converted  88.7%
+
+### TABLE 8  reader requirement
+  fold F(250)/F(150) at the operating point = 1.198
+     n=1 CV=  3% -> z=4.25  separable
+     n=1 CV=  5% -> z=2.55  not separable
+     n=1 CV= 10% -> z=1.28  not separable
+     n=1 CV= 15% -> z=0.85  not separable
+     n=3 CV=  3% -> z=7.37  separable
+     n=3 CV=  5% -> z=4.42  separable
+     n=3 CV= 10% -> z=2.21  not separable
+     n=3 CV= 15% -> z=1.47  not separable
+     n=6 CV=  3% -> z=10.42  separable
+     n=6 CV=  5% -> z=6.25  separable
+     n=6 CV= 10% -> z=3.12  separable
+     n=6 CV= 15% -> z=2.08  not separable
+
+######## ceiling.py ########
+=== absolute best fold over 1296 configurations (clean sample, no interferents) ===
+   fold = 1.429  at {'OD': 0.003, 'F': 6, 'T': 3600, 'P_endo': 2.0, 'k_scav': 2000.0}
+   required reader CV at n=3: 15.6 %
+     n= 3 -> CV must be under 15.6 %
+     n= 6 -> CV must be under 22.1 %
+     n=12 -> CV must be under 31.3 %
+
+=== why the ceiling exists: fold vs signal-to-background ===
+   the clinical difference is 250/150 = 1.667x. fluorescence = blank + signal,
+   so fold = (1+SB_cutoff)/(1+SB_healthy) and only reaches 1.667 as SB -> infinity
+   OD  0.300 | S/B healthy     0.18  cutoff     0.28 | ratio of S/B 1.593 | fold 1.089
+   OD  0.100 | S/B healthy     0.47  cutoff     0.71 | ratio of S/B 1.516 | fold 1.164
+   OD  0.030 | S/B healthy     1.12  cutoff     1.57 | ratio of S/B 1.410 | fold 1.216
+   OD  0.010 | S/B healthy     1.65  cutoff     2.18 | ratio of S/B 1.324 | fold 1.202
+   OD  0.003 | S/B healthy     1.89  cutoff     2.42 | ratio of S/B 1.283 | fold 1.185
+   OD  0.001 | S/B healthy     1.96  cutoff     2.49 | ratio of S/B 1.271 | fold 1.179
+
+=== what a cell-free chemical peroxide readout would give instead ===
+   no endogenous background, no compartment, no OxyR compression:
+   fold = 1.667 exactly, and Amplex Red resolves ~0.05 uM H2O2 against 1.5 uM delivered.
+
+######## fixed_plasmid.py ########
+=== OD floor forced by reporter brightness, and the fold it allows ===
+GFP/cell       reader LOD    OD floor  fold     CV n=3    CV n=6   
+1e+03          phone, typ    7.527     1.034    1.5%      2.1%       <- OD too high to work at all
+1e+03          phone, good   0.753     1.080    3.3%      4.7%       <- OD too high to work at all
+1e+03          plate reader  0.038     1.213    8.4%      11.9%    
+1e+04          phone, typ    0.753     1.080    3.3%      4.7%       <- OD too high to work at all
+1e+04          phone, good   0.075     1.187    7.5%      10.6%    
+1e+04          plate reader  0.004     1.217    8.6%      12.2%    
+1e+05          phone, typ    0.075     1.187    7.5%      10.6%    
+1e+05          phone, good   0.008     1.219    8.7%      12.3%    
+1e+05          plate reader  0.000     1.216    8.6%      12.1%    
+
+=== what a whole-cell dose response should show at NON-clinical DAS ===
+   (this is what is actually demonstrable in an iGEM season)
+   DAS      0.2 uM in the well -> S/B   0.123  (clinical)
+   DAS      2.5 uM in the well -> S/B   0.908  (spiked)
+   DAS     25.0 uM in the well -> S/B   2.920  (spiked)
+   DAS    250.0 uM in the well -> S/B   4.219  (spiked)
+
+######## hill.py ########
+=== how much of a 1.667x input difference reaches the output ===
+  f(x) = x^n / (K^n + x^n),  K = 0.10 uM
+
+  x/K      n=1: f       n=2: f                 
+  0.1      0.091        0.010       
+  0.3      0.231        0.083       
+  1.0      0.500        0.500       
+  3.0      0.750        0.900       
+
+  local log-log slope  dlnf/dlnx = n*(1-f):
+    far below K  n=1 -> 0.91   n=2 -> 1.98
+    at K         n=1 -> 0.50   n=2 -> 1.00
+    above K      n=1 -> 0.25   n=2 -> 0.20
+
+  so a 1.667x change in H2O2 becomes, in reporter output:
+    far below K  n=1 -> 1.59x   n=2 -> 2.75x
+    at K         n=1 -> 1.29x   n=2 -> 1.67x
+
+=== end to end, through the whole model at the operating point ===
+  n = 1.0  ->  fold 1.198  |  reader CV must be under 7.9 % at n_rep=3
+  n = 1.5  ->  fold 1.464  |  reader CV must be under 16.7 % at n_rep=3
+  n = 2.0  ->  fold 1.807  |  reader CV must be under 25.9 % at n_rep=3
+  n = 3.0  ->  fold 2.458  |  reader CV must be under 39.3 % at n_rep=3
+
+######## qss_check.py ########
+case                            S/B LSODA     S/B fast      err | fold exact  fold fast
+operating point, free             1.03513      0.96732    6.55% |     1.1977     1.1713
+original draft, OD 1              0.00212      0.00209    1.19% |     1.0008     1.0008
+Hpx- knockout                     0.01686      0.02364   40.21% |     1.0040     1.0028
+cytoplasmic, poor uptake          0.01660      0.01703    2.60% |     1.0066     1.0067
+periplasmic                       0.87468      0.96352   10.16% |     1.1909     1.1945
+with interferents                 1.22032      1.24606    2.11% |     1.1555     1.1314
+
+######## qss_check2.py ########
+case                           S/B exact    S/B fast     err |   fold ex fold fast    err
+operating point, free            1.03513     1.03569   0.05% |    1.1977    1.1978  0.04%
+original draft, OD 1             0.00212     0.00212   0.03% |    1.0008    1.0008  0.03%
+Hpx- knockout                    0.01686     0.01688   0.12% |    1.0040    1.0040  0.12%
+very low density OD 0.005        2.16090     2.16348   0.12% |    1.2011    1.2012  0.04%
+cytoplasmic, poor uptake         0.01660     0.01660   0.01% |    1.0066    1.0066  0.01%
+periplasmic                      0.87468     0.87542   0.09% |    1.1909    1.1910  0.06%
+with interferents                1.22032     1.22126   0.08% |    1.1555    1.1556  0.02%
+matrix sink k_chem 0.01          0.36237     0.36248   0.03% |    1.1086    1.1086  0.02%
+fast enzyme E = 1 uM             0.94154     0.94154   0.00% |    1.1641    1.1641  0.00%
+
+######## reader.py ########
+=== brightness: GFP concentration in the well ===
+  OD600      1e4 GFP/cell   1e5 GFP/cell  
+  0.300      3.99 nM        39.85 nM      
+  0.100      1.33 nM        13.28 nM      
+  0.030      0.40 nM        3.99 nM       
+  0.010      0.13 nM        1.33 nM       
+  0.003      0.04 nM        0.40 nM       
+
+=== best fold reachable if the reader forces you to stay above some OD ===
+  OD  0.300 | best delivery 24x | fold 1.116 | CV needed:  4.8% (n=3)   6.8% (n=6)
+  OD  0.100 | best delivery 16x | fold 1.172 | CV needed:  7.0% (n=3)   9.8% (n=6)
+  OD  0.050 | best delivery 12x | fold 1.204 | CV needed:  8.1% (n=3)  11.5% (n=6)
+  OD  0.030 | best delivery 12x | fold 1.216 | CV needed:  8.6% (n=3)  12.1% (n=6)
+  OD  0.010 | best delivery  6x | fold 1.219 | CV needed:  8.7% (n=3)  12.3% (n=6)
+  OD  0.003 | best delivery  6x | fold 1.216 | CV needed:  8.6% (n=3)  12.1% (n=6)
+
+=== does a stronger reporter help? (beta x10 = 1e5 GFP/cell) ===
+  fold at beta x1  : 1.1983
+  fold at beta x10 : 1.1983   (identical: it lifts signal and blank together)
+  but it lifts brightness 10x, which lets you drop OD by 10x, and THAT lifts fold.
+
+######## robust2.py ########
+combinations where MORE enzyme still helps (claim fails):
+   Km=310 K=0.10 n=2 P=14.0 | fold 1.223 -> 1.269 | DAS converted at low E: 75%
+   Km= 83 K=0.20 n=2 P= 4.0 | fold 1.690 -> 1.762 | DAS converted at low E: 99%
+   Km=310 K=0.20 n=2 P= 4.0 | fold 1.372 -> 1.763 | DAS converted at low E: 75%
+   Km= 83 K=0.20 n=2 P=14.0 | fold 1.386 -> 1.437 | DAS converted at low E: 99%
+   Km=310 K=0.20 n=2 P=14.0 | fold 1.216 -> 1.438 | DAS converted at low E: 75%
+
+######## robustness.py ########
+parameter combinations tested: 24
+
+  knockout harmful       holds in 24 / 24 combinations
+  enzyme not limiting    holds in 19 / 24 combinations
+  density dominates      holds in 24 / 24 combinations
+
+  knockout penalty (WT S/B over Hpx- S/B): 35 to 42905 fold
+  density gain OD 1 -> 0.05             : 8 to 62 fold
+  fold F(250)/F(150) across the grid    : 1.026 to 1.807
+
+=== which single parameter moves the answer most? ===
+  K_oxyr   [0.02, 0.1, 0.2] -> fold ['1.078', '1.198', '1.236']  (spread 0.158)
+  n_hill   [1.0, 2.0] -> fold ['1.198', '1.807']  (spread 0.610)
+  P_endo   [4.0, 14.0] -> fold ['1.198', '1.079']  (spread 0.119)
+  Km       [83.0, 310.0] -> fold ['1.198', '1.174']  (spread 0.023)
+
+=== does the optimum delivery factor move with K_oxyr? ===
+  K_oxyr=0.02 uM -> best concentration factor  8x (fold 1.079)
+  K_oxyr=0.10 uM -> best concentration factor 16x (fold 1.201)
+  K_oxyr=0.20 uM -> best concentration factor 24x (fold 1.258)
+
+######## swap.py ########
+=== fold on the instrument, for a marker at concentration C with clinical ratio R ===
+   (same plasmid, same cells, same operating point, concentration factor tuned)
+
+healthy        clinical ratio healthy -> sick
+in urine     R = 1.67 (DAS) R = 3         R = 5         R = 10       
+0.15 uM      1.20x / 8%    1.49x / 17%   1.78x / 25%   2.19x / 34%  
+0.50 uM      1.21x / 8%    1.49x / 18%   1.78x / 25%   2.20x / 34%  
+2.00 uM      1.21x / 8%    1.46x / 17%   1.69x / 23%   1.95x / 29%  
+10.00 uM     1.12x / 5%    1.23x / 9%    1.30x / 11%   1.36x / 13%  
+100.00 uM    1.02x / 1%    1.03x / 1%    1.03x / 1%    1.03x / 1%   
+
+   cell = fold on the instrument / reader CV it tolerates at n=3
+   a reader CV under about 10 % is realistic; under 5 % is not
+
+=== which matters more, concentration or clinical ratio? ===
+   DAS as is                      : fold 1.199
+   same marker but 10x more of it : fold 1.124
+   same amount but ratio 3 not 1.67: fold 1.490
+   same amount but ratio 5 not 1.67: fold 1.782
+
+######## swap2.py ########
+=== with dilution allowed, does absolute concentration matter at all? ===
+healthy      R=1.67 (DAS)     R=3              R=5             
+0.15 uM      1.20x  CV  8%    1.49x  CV 17%    1.78x  CV 25%   
+0.50 uM      1.21x  CV  8%    1.49x  CV 18%    1.78x  CV 25%   
+2.00 uM      1.21x  CV  8%    1.49x  CV 18%    1.78x  CV 25%   
+10.00 uM     1.21x  CV  8%    1.49x  CV 17%    1.74x  CV 24%   
+100.00 uM    1.20x  CV  8%    1.49x  CV 18%    1.78x  CV 25%   
+
+  -> the columns are flat. concentration is a free knob, so it cancels.
+     only the clinical ratio R changes the answer.
+
+=== so the whole question reduces to one number ===
+  clinical ratio  1.50 -> fold 1.15 on the reader, tolerates CV    6%   tight
+  clinical ratio  1.67 -> fold 1.20 on the reader, tolerates CV    8%   tight
+  clinical ratio  2.00 -> fold 1.28 on the reader, tolerates CV   11%   tight
+  clinical ratio  3.00 -> fold 1.49 on the reader, tolerates CV   17%   workable
+  clinical ratio  5.00 -> fold 1.78 on the reader, tolerates CV   25%   easy
+  clinical ratio 10.00 -> fold 2.19 on the reader, tolerates CV   34%   easy

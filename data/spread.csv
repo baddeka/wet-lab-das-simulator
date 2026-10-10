@@ -1,0 +1,7 @@
+spread_type,recipe,params,note
+sd,as_is,,The spread is already the standard deviation.
+sem,sem,,SD = SEM * sqrt(n).
+iqr_bounds,iqr,,"SD = (hi - lo) / (2 * z75), z75 = the 75th-percentile normal quantile. Assumes normality."
+iqr_width,iqr,,Same as iqr_bounds but the cell holds the width directly because the source gives no bounds.
+range_bounds,range_hozo,n_split=70;div_small=4;div_large=6,"SD = (hi - lo) / 4 for n <= 70 and / 6 for n > 70, after Hozo 2005. Crude; rows using it are flagged low-confidence."
+ci95_median_bounds,ci95,,"SD = sqrt(n) * (hi - lo) / (2 * z975). Converts a 95% CI of the central value back to a sample SD."

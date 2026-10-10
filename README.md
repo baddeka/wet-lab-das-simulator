@@ -8,7 +8,7 @@ you set the reagents, the culture and the reader, and reports the one number tha
 whether the device works: the fold change between a healthy sample and one at the clinical
 cutoff, against the noise the reader can actually resolve.
 
-**[Open the simulator →](https://baddeka.github.io/das-branch-simulator/)**
+**[Open the simulator →](https://baddeka.github.io/wet-lab-das-simulator/)**
 
 ## What the model says
 
@@ -46,11 +46,35 @@ by a reader with a 5 % CV in triplicate.
 | Membrane exchange `k_mem` | ≈ 90 s⁻¹ | permeability 1.6×10⁻³ cm/s × S/V ≈ 6 µm⁻¹ |
 | Cytoplasm volume fraction `φ` | 8×10⁻⁴ per OD₆₀₀ | 8×10⁸ cells/mL at OD 1, ~1 fL each |
 | OxyR half-activation | ≈ 0.1 µM cytoplasmic | Åslund et al. *PNAS* 1999; Imlay reviews |
-| DAS oxidase `kcat` / `Km` | 158 s⁻¹ / 83 µM | Bakke, Shimoji & Kajiyama 2007, *BBA* 1774:1395 |
+| DAS oxidase `kcat` / `Km` | 158 s⁻¹ / 310 µM | Bakke, Shimoji & Kajiyama 2007, *BBA* 1774:1395 |
+
+That paper reports two values of `Km`, 83 and 310 µM, for different buffers. The page now uses 310; `data/sensors.csv` carries both, and the robustness sweeps still run over the pair. The assay sits far below `Km` either way, so the choice changes the minimum enzyme loading and not the verdict: the fold at the recommended operating point moves from 1.198 to 1.174 and stays separable.
+
 
 Nothing is fitted. The parameters over-determine the system, and the check is that they
 reproduce a fifth, independently measured quantity: the ~9-fold medium-to-cytoplasm H₂O₂
 gradient in wild-type cells. The model gives 8.8.
+
+## Where the numbers live
+
+No constant is written into the page any more. `build_site.py` reads `data/platform.csv`,
+`data/scenarios.csv`, `data/sensors.csv` and `data/web_presets.csv` and injects them into
+`index.html` as a single JSON block; the page reads its starting state from that block and
+nothing else. To change what the published page computes, edit a CSV and rebuild — never a
+number in `site.html`. `tests/test_site.py` fails if the two disagree, which is how the
+`Km` of 83 µM was able to outlive its own correction before.
+
+The same data files drive a separate screening tool that asks which sensing module is worth
+building at all, across biomarkers and across module types. See [SCREEN.md](SCREEN.md).
+
+```bash
+pip install -r requirements.txt
+python build_site.py --sync     # rebuild index.html from the data files
+python tests/test_site.py       # page and data agree
+python tests/test_branches.py   # the model's own unit checks
+python tests/test_regression.py # 17 legacy scripts still reproduce their baseline
+python screen.py                # the module screen
+```
 
 ## Read it as a design tool, not a prediction
 

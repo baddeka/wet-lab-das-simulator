@@ -202,7 +202,7 @@ footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
       <div class="verdict-fold">
         <span class="k">Fold, cutoff vs healthy</span>
         <span class="v" id="v-fold">1.00</span>
-        <span class="u" id="v-foldsub">F(250) / F(150) nmol&middot;g<sup>&minus;1</sup> creatinine</span>
+        <span class="u" id="v-foldsub"></span>
       </div>
       <div class="verdict-say">
         <span class="chip" id="v-chip">&mdash;</span>
@@ -248,21 +248,164 @@ footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
   <p><b>Read it as a design tool, not a prediction.</b> Three quantities are unmeasured and any of them can close the branch: whether DAS crosses the inner membrane at all, how selective the oxidase is against the more abundant urinary acetylpolyamines, and whether creatinine can be measured in parallel.</p>
 </footer>
 
+<script id="model-config" type="application/json">
+{
+  "P0": {
+    "E": 0.0015,
+    "K_oxyr": 0.1,
+    "Km": 310.0,
+    "OD": 0.05,
+    "P_endo": 4.0,
+    "T_read": 1800.0,
+    "V_das": 250.0,
+    "alpha": 1.0,
+    "beta": 0.005,
+    "conc_factor": 12.0,
+    "cr_norm": false,
+    "creatinine": 1.0,
+    "cv": 0.05,
+    "growing": false,
+    "interferent": 0.0,
+    "k_chem": 0.0,
+    "k_mat": 0.001925408834888737,
+    "k_mem": 90.0,
+    "k_scav": 700.0,
+    "kcat": 158.0,
+    "leak": 2e-05,
+    "mode": "free",
+    "mu_pre": 0.00028881132523331054,
+    "n_hill": 1.0,
+    "n_rep": 3.0,
+    "peri_frac": 0.16,
+    "phi_per_OD": 0.0008,
+    "sample_frac": 0.5,
+    "selectivity": 100.0
+  },
+  "_generated_from": "data/platform.csv, data/scenarios.csv (web_default), data/sensors.csv, data/web_presets.csv",
+  "activePreset": 2,
+  "labels": {
+    "cr_high": 2.0,
+    "cr_low": 0.5,
+    "cutoff_note": "cutoff 200 (M) / 250 (F)",
+    "enzyme": "DhaPAO",
+    "enzyme_source": "10.1016/j.bbapap.2007.08.010",
+    "v_cutoff": 250.0,
+    "v_healthy": 150.0
+  },
+  "presets": [
+    {
+      "n": "Original draft",
+      "note": "The design as first written: conventional cell density and a growing culture.",
+      "p": {
+        "E": 0.01,
+        "OD": 1.0,
+        "P_endo": 14.0,
+        "T_read": 3600.0,
+        "alpha": 1.0,
+        "conc_factor": 15.0,
+        "cr_norm": false,
+        "growing": true,
+        "interferent": 0.0,
+        "k_chem": 0.0,
+        "k_scav": 700.0,
+        "mode": "free",
+        "sample_frac": 0.1
+      }
+    },
+    {
+      "n": "Hpx- knockout",
+      "note": "Catalase/peroxidase triple knockout. Raises resting cytoplasmic H2O2 above the OxyR half-activation point, so the reporter starts switched on and the fold gets worse.",
+      "p": {
+        "E": 0.01,
+        "OD": 1.0,
+        "P_endo": 14.0,
+        "T_read": 3600.0,
+        "alpha": 1.0,
+        "conc_factor": 15.0,
+        "cr_norm": false,
+        "growing": true,
+        "interferent": 0.0,
+        "k_chem": 0.0,
+        "k_scav": 5.0,
+        "mode": "free",
+        "sample_frac": 0.1
+      }
+    },
+    {
+      "n": "Recommended",
+      "note": "Low cell density, non-growing cells, a 30-minute read, creatinine normalised.",
+      "p": {
+        "E": 0.0015,
+        "OD": 0.05,
+        "P_endo": 4.0,
+        "T_read": 1800.0,
+        "alpha": 1.0,
+        "conc_factor": 12.0,
+        "cr_norm": true,
+        "growing": false,
+        "interferent": 0.0,
+        "k_chem": 0.0,
+        "k_scav": 700.0,
+        "mode": "free",
+        "sample_frac": 0.5
+      }
+    },
+    {
+      "n": "Periplasmic display",
+      "note": "Enzyme displayed in the periplasm; the effective loading per litre of assay is capped by periplasmic volume.",
+      "p": {
+        "E": 100.0,
+        "OD": 0.05,
+        "P_endo": 4.0,
+        "T_read": 1800.0,
+        "alpha": 1.0,
+        "conc_factor": 12.0,
+        "cr_norm": true,
+        "growing": false,
+        "interferent": 0.0,
+        "k_chem": 0.0,
+        "k_scav": 700.0,
+        "mode": "peri",
+        "sample_frac": 0.5
+      }
+    },
+    {
+      "n": "Real urine",
+      "note": "Adds 2 uM of cross-reactive polyamines and a matrix peroxide sink. The selectivity of 100 is an assumption: none has been measured for this enzyme.",
+      "p": {
+        "E": 0.0015,
+        "OD": 0.05,
+        "P_endo": 4.0,
+        "T_read": 1800.0,
+        "alpha": 1.0,
+        "conc_factor": 12.0,
+        "cr_norm": false,
+        "growing": false,
+        "interferent": 2.0,
+        "k_chem": 0.005,
+        "k_scav": 700.0,
+        "mode": "free",
+        "sample_frac": 0.5,
+        "selectivity": 100.0
+      }
+    }
+  ]
+}
+</script>
+
 <script>
 "use strict";
 const LN2 = Math.log(2);
 
 /* ============================ model ============================ */
-const P0 = {
-  V_das:250, creatinine:1.0, conc_factor:12, sample_frac:0.50,
-  interferent:0, selectivity:100, cr_norm:false,
-  OD:0.05, phi_per_OD:8e-4, peri_frac:0.16,
-  k_mem:90, k_scav:700, P_endo:4.0, k_chem:0,
-  kcat:158, Km:83, E:1.5e-3, alpha:1.0, mode:"free",
-  K_oxyr:0.10, n_hill:1.0,
-  beta:5e-3, leak:2e-5, k_mat:LN2/360, mu_pre:LN2/2400, growing:false,
-  T_read:1800, cv:0.05, n_rep:3
-};
+/* Every constant below comes from the data files, injected at build time by
+   build_site.py. Do not write a number here: edit data/platform.csv,
+   data/scenarios.csv (web_default), data/sensors.csv or data/web_presets.csv
+   and rebuild. tests/test_site.py enforces this. */
+const CFG = JSON.parse(document.getElementById("model-config").textContent);
+const P0  = CFG.P0;
+const V_HEALTHY = CFG.labels.v_healthy, V_CUTOFF = CFG.labels.v_cutoff;
+const CR_LOW = CFG.labels.cr_low, CR_HIGH = CFG.labels.cr_high;
 const phi   = p => p.phi_per_OD * p.OD;
 const netF  = p => p.conc_factor * p.sample_frac * (p.cr_norm ? 1/p.creatinine : 1);
 const dasIn = p => p.V_das * p.creatinine / 1000 * netF(p);
@@ -361,9 +504,9 @@ function sup(n){
 
 const CTRLS = [
  {g:"g-sample", key:"V_das", name:"Urinary DAS in this sample", min:60, max:600, step:5,
-  disp:v => fmt(v,0) + " nmol/g cr", note:"healthy median 150 &middot; cutoff 200 (M) / 250 (F)"},
+  disp:v => fmt(v,0) + " nmol/g cr", note:"healthy median " + CFG.labels.v_healthy + " &middot; " + CFG.labels.cutoff_note},
  {g:"g-sample", key:"creatinine", name:"Urine creatinine", min:0.3, max:2.5, step:0.05,
-  disp:v => fmt(v,2) + " g/L", note:"hydration; normal range 0.5 to 2"},
+  disp:v => fmt(v,2) + " g/L", note:"hydration; normal range " + CR_LOW + " to " + CR_HIGH},
  {g:"g-sample", key:"cr_norm", type:"switch", name:"Normalise to creatinine",
   note:"scale each sample&rsquo;s concentration factor by 1/Cr"},
  {g:"g-sample", key:"conc_factor", name:"Concentration factor", min:1, max:60, step:1,
@@ -455,19 +598,8 @@ function syncControls(){
 }
 
 /* ============================ presets ============================ */
-const PRESETS = [
- {n:"Original draft", p:{OD:1.0, k_scav:700, conc_factor:15, sample_frac:0.10, E:1e-2, mode:"free",
-   T_read:3600, P_endo:14, growing:true, interferent:0, cr_norm:false, k_chem:0, alpha:1}},
- {n:"Hpx⁻ knockout", p:{OD:1.0, k_scav:5, conc_factor:15, sample_frac:0.10, E:1e-2, mode:"free",
-   T_read:3600, P_endo:14, growing:true, interferent:0, cr_norm:false, k_chem:0, alpha:1}},
- {n:"Recommended", p:{OD:0.05, k_scav:700, conc_factor:12, sample_frac:0.50, E:1.5e-3, mode:"free",
-   T_read:1800, P_endo:4, growing:false, interferent:0, cr_norm:true, k_chem:0, alpha:1}},
- {n:"Periplasmic display", p:{OD:0.05, k_scav:700, conc_factor:12, sample_frac:0.50, E:100, mode:"peri",
-   T_read:1800, P_endo:4, growing:false, interferent:0, cr_norm:true, k_chem:0, alpha:1}},
- {n:"Real urine", p:{OD:0.05, k_scav:700, conc_factor:12, sample_frac:0.50, E:1.5e-3, mode:"free",
-   T_read:1800, P_endo:4, growing:false, interferent:2, selectivity:100, cr_norm:false, k_chem:0.005, alpha:1}}
-];
-let activePreset = 2;
+const PRESETS = CFG.presets;
+let activePreset = CFG.activePreset;
 function clearPreset(){ activePreset = -1; }
 function buildPresets(){
   const host = document.getElementById("presets");
@@ -539,13 +671,13 @@ function drawDose(){
   const mid = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v}), 260)]);
   let band = null;
   if (!S.cr_norm){
-    const lo = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v, creatinine:0.5}), 260)]);
-    const hi = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v, creatinine:2.0}), 260)]);
+    const lo = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v, creatinine:CR_LOW}), 260)]);
+    const hi = xs.map(v => [v, fluor(Object.assign({}, base, {V_das:v, creatinine:CR_HIGH}), 260)]);
     band = {lo:lo, hi:hi};
   }
   let vals = mid.map(d => d[1]);
   if (band) vals = vals.concat(band.hi.map(d => d[1]), band.lo.map(d => d[1]));
-  const fH = fluor(Object.assign({}, base, {V_das:150}), 260);
+  const fH = fluor(Object.assign({}, base, {V_das:V_HEALTHY}), 260);
   const halfBand = fH*(Math.exp(2.8*S.cv*Math.sqrt(2/S.n_rep)) - 1);
   vals = vals.concat([fH + halfBand, fH - halfBand]);
   let lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
@@ -636,8 +768,8 @@ function render(){
   syncControls();
   PRESETS.forEach((pr, i) => pr._el.setAttribute("aria-pressed", i === activePreset ? "true" : "false"));
 
-  const sig250 = Object.assign({}, S, {V_das:250});
-  const sig150 = Object.assign({}, S, {V_das:150});
+  const sig250 = Object.assign({}, S, {V_das:V_CUTOFF});
+  const sig150 = Object.assign({}, S, {V_das:V_HEALTHY});
   const fold = fluor(sig250) / fluor(sig150);
   const cur = run(S, true), blank = run(S, false);
   const sb = (cur.g - blank.g)/blank.g;
@@ -648,6 +780,9 @@ function render(){
   // verdict
   const vd = document.getElementById("verdict"), chip = document.getElementById("v-chip");
   document.getElementById("v-fold").textContent = fold.toFixed(3);
+  document.getElementById("v-foldsub").innerHTML =
+    "F(" + CFG.labels.v_cutoff + ") / F(" + CFG.labels.v_healthy +
+    ") nmol&middot;g<sup>&minus;1</sup> creatinine";
   let cls, chipTxt, say;
   if (z >= 2.8){
     cls = ""; chipTxt = "Separable";
@@ -701,8 +836,8 @@ function render(){
   // diagnostics
   const d = [];
   if (!S.cr_norm){
-    const hiHealthy = fluor(Object.assign({}, S, {V_das:150, creatinine:2.0}));
-    const loCancer  = fluor(Object.assign({}, S, {V_das:250, creatinine:0.5}));
+    const hiHealthy = fluor(Object.assign({}, S, {V_das:V_HEALTHY, creatinine:CR_HIGH}));
+    const loCancer  = fluor(Object.assign({}, S, {V_das:V_CUTOFF, creatinine:CR_LOW}));
     if (hiHealthy >= loCancer)
       d.push(["bad", "Hydration inverts the classes",
         "A healthy sample at Cr 2.0 g/L reads <b>" + hiHealthy.toFixed(3) +
@@ -736,7 +871,7 @@ function render(){
       "</b> of the volume as cytoplasm. Diluting to OD₆₀₀ 0.05 is worth about <b>" +
       (S.OD/0.05).toFixed(0) + "×</b> and costs nothing but buffer."]);
   if (S.interferent > 0){
-    const clean = fluor(Object.assign({}, S, {V_das:250, interferent:0}))/fluor(Object.assign({}, S, {V_das:150, interferent:0}));
+    const clean = fluor(Object.assign({}, S, {V_das:V_CUTOFF, interferent:0}))/fluor(Object.assign({}, S, {V_das:V_HEALTHY, interferent:0}));
     const lost = (clean - fold)/Math.max(clean - 1, 1e-9);
     d.push([lost > 0.4 ? "bad" : (lost > 0.15 ? "warn" : "ok"), "Cross-reactive polyamines are compressing the signal",
       "They cost <b>" + (100*lost).toFixed(0) + " %</b> of the fold change (" + clean.toFixed(3) +

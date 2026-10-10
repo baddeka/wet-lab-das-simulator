@@ -1,0 +1,29 @@
+name,value,units,group,note
+phi_per_OD,8e-4,fraction per OD600,geometry,Cell volume fraction per unit OD600.
+peri_frac,0.16,fraction of cell volume,geometry,Periplasm as a fraction of cell volume.
+k_mem,90.0,1/s,h2o2,"Cytoplasm-medium H2O2 exchange, P*(S/V)."
+k_scav,700.0,1/s,h2o2,Intracellular H2O2 scavenging by KatG/KatE/AhpCF in the wild type.
+k_scav_knockout,5.0,1/s,h2o2,Residual scavenging in a catalase/peroxidase triple knockout (Hpx-). Used only to test whether a type-A candidate needs the knockout to pass.
+P_endo,14.0,uM/s,h2o2,Endogenous cytoplasmic H2O2 production in a growing culture.
+k_chem,0.0,1/s,h2o2,Chemical H2O2 loss in the medium. Zero unless the sample matrix contributes.
+K_oxyr,0.10,uM,oxyr,Cytoplasmic H2O2 at half OxyR activation.
+n_hill,1.0,dimensionless,oxyr,Hill coefficient of OxyR activation.
+beta,5e-3,uM/s,reporter,Promoter output at full OxyR activation.
+leak,2e-5,uM/s,reporter,Basal promoter output.
+gfp_maturation_halflife_s,360.0,s,reporter,sfGFP maturation half-life. k_mat = ln2 / this.
+growth_doubling_pre_s,2400.0,s,reporter,Doubling time before the assay. mu_pre = ln2 / this.
+growth_doubling_s,2400.0,s,reporter,Doubling time during the assay. mu = ln2 / this.
+cv_reader,0.05,fraction,reader,Relative SD of a single fluorescence measurement.
+n_rep,3,count,reader,Technical replicates.
+creatinine_MW_g_per_mol,113.12,g/mol,chemistry,Molar mass of creatinine. Converts creatinine g/L to mol/L for the per-mol-creatinine units.
+hill_n_binding,1.0,dimensionless,binding,"Hill coefficient assumed for module types B and C. Modelling assumption, not a measured constant: 1.0 means non-cooperative single-site binding. No source reports a Hill coefficient for any sensor in sensors.csv."
+z_required,2.8,dimensionless,threshold,Z needed to call two fluorescence readings separable at the reader.
+auc_pass_min,0.70,dimensionless,threshold,Reported AUC at or above which stage 1 passes on the AUC route.
+p_pass_max,0.05,dimensionless,threshold,Two-sided Welch p below which stage 1 can pass on the statistics route.
+cohens_d_pass_min,0.8,dimensionless,threshold,"Absolute Cohen's d required alongside the p-value. Both are needed, so a tiny effect at huge n does not pass."
+sd_over_value_max,1.0,dimensionless,threshold,"Applies only to an SD reconstructed from a range or an IQR. If that SD exceeds the central value by more than this, the strictly positive quantity cannot be anywhere near normal, the reconstruction is not trustworthy, and the row is called insufficient rather than failed. A spread the authors reported directly as an SD or SEM is never second-guessed this way."
+conc_factor_max,40.0,fold,threshold,Largest sample concentration factor considered achievable. Above this a candidate is red rather than yellow.
+kd_ratio_lo,0.1,dimensionless,threshold,Analyte/Kd below this is called below-Kd: the sensor sits in its dead zone.
+kd_ratio_hi,10.0,dimensionless,threshold,Analyte/Kd above this is called saturated.
+conversion_target,0.95,fraction,threshold,"Fraction of the analyte that must be turned over inside the read time. Sets the minimum enzyme loading reported by the enzyme comparison."
+knockout_gain_min,1.02,fold,threshold,"Relative fold improvement a scavenger knockout must give before it is called helpful, rather than noise in the integration."

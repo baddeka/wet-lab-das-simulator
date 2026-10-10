@@ -1,0 +1,7 @@
+# Runtime for the model, the screen and the site build.
+numpy
+scipy
+
+# Only needed to re-import the source spreadsheets into data/*.csv. The CSVs are
+# committed, so nothing in this repo needs it to run.
+# openpyxl

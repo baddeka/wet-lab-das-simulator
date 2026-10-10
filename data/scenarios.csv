@@ -1,0 +1,52 @@
+scenario,param,value,units,note
+das_reference,mode,peri,,"Enzyme localisation: peri, free or cyto."
+das_reference,sensor_biomarker,DiAcSpm,,Which sensors.csv row supplies Km and kcat for das_model.DEFAULTS.
+das_reference,sensor_protein,DhaPAO,,Protein name of that row. Changing these two cells repoints the legacy scenario at a different enzyme.
+das_reference,clinical_biomarker,DiAcSpm,,Which clinical.csv row this scenario corresponds to.
+das_reference,clinical_cancer,Colorectal,,"Together with the biofluid this picks one study, used to report the data-derived levels alongside the legacy v_healthy and v_cutoff."
+das_reference,clinical_biofluid,Urine (morning spot),,Biofluid of that row.
+das_reference,V_das,200.0,nmol/g creatinine,Analyte level in the raw biofluid for the legacy single-case run.
+das_reference,creatinine,1.0,g/L,Assumed urine creatinine. Needed to turn creatinine-normalised clinical units into uM.
+das_reference,conc_factor,15.0,fold,Sample concentration before the assay.
+das_reference,sample_frac,0.10,v/v,Fraction of the final assay volume that is concentrated sample.
+das_reference,interferent,0.0,uM,Cross-reactive polyamines in the raw biofluid.
+das_reference,selectivity,100.0,dimensionless,"(kcat/Km) analyte over (kcat/Km) interferent. Assumption: not measured for any enzyme in sensors.csv."
+das_reference,OD,0.10,OD600,Cell density in the assay.
+das_reference,E,1.0e-3,uM,Enzyme concentration in its own compartment.
+das_reference,alpha,1.0,dimensionless,Analyte accumulation ratio cytoplasm over medium.
+das_reference,T_read,3600.0,s,Time from sample addition to the fluorescence read.
+das_reference,v_healthy,150.0,nmol/g creatinine,Healthy level used by the legacy discriminate() call.
+das_reference,v_cutoff,250.0,nmol/g creatinine,Published cut-off used by the legacy discriminate() call.
+screen_default,mode,free,,Cell-free enzyme for the screening runs.
+screen_default,creatinine,1.0,g/L,Assumed urine creatinine for unit conversion.
+screen_default,conc_factor,1.0,fold,"Starts at 1 so the screen reports the concentration factor a candidate needs, rather than assuming one."
+screen_default,sample_frac,0.50,v/v,Half the assay volume is sample.
+screen_default,interferent,0.0,uM,No interferent in the baseline screen.
+screen_default,selectivity,100.0,dimensionless,Assumption; see the das_reference note.
+screen_default,OD,0.05,OD600,Low cell density to keep the endogenous H2O2 background small.
+screen_default,E,1.5e-3,uM,Enzyme concentration in its own compartment.
+screen_default,alpha,1.0,dimensionless,Analyte accumulation ratio cytoplasm over medium.
+screen_default,T_read,1800.0,s,30-minute read.
+screen_default,P_endo,4.0,uM/s,Non-growing carbon-limited cells produce less endogenous H2O2 than the platform default of 14.
+screen_default,mu,1e-6,1/s,Non-growing cells; overrides the doubling time in platform.csv.
+web_default,mode,free,,Enzyme localisation for the interactive page's starting state.
+web_default,sensor_biomarker,DiAcSpm,,Which sensors.csv row supplies Km and kcat to the page.
+web_default,sensor_protein,DhaPAO,,"Working enzyme row. Changing this cell repoints the page at another enzyme, Km included."
+web_default,V_das,250.0,nmol/g creatinine,Starting slider position: the published colorectal cut-off.
+web_default,creatinine,1.0,g/L,Starting urine creatinine.
+web_default,conc_factor,12.0,fold,Starting sample concentration factor.
+web_default,sample_frac,0.50,v/v,Starting sample fraction of the assay volume.
+web_default,interferent,0.0,uM,No interferent in the starting state.
+web_default,selectivity,100.0,dimensionless,"Assumption, not a measurement: no selectivity has been measured for this enzyme."
+web_default,cr_norm,0,boolean,Creatinine normalisation switch off at start.
+web_default,OD,0.05,OD600,Starting cell density.
+web_default,E,1.5e-3,uM,Starting enzyme concentration.
+web_default,alpha,1.0,dimensionless,Analyte accumulation ratio cytoplasm over medium.
+web_default,T_read,1800.0,s,Starting read time.
+web_default,P_endo,4.0,uM/s,Non-growing cells; overrides the platform default of 14.
+web_default,growing,0,boolean,Growth-dilution switch off at start.
+web_default,v_healthy,150.0,nmol/g creatinine,Healthy level the page's fold readout is quoted against.
+web_default,v_cutoff,250.0,nmol/g creatinine,Cut-off level the page's fold readout is quoted against.
+web_default,cutoff_note,cutoff 200 (M) / 250 (F),,"Sex-split cut-off text shown under the sample slider, carried verbatim from the original page. clinical.csv records only the single 0.25 umol/g cut-off of 10.1158/1078-0432.CCR-04-2275, so this split is not derived from the data files and is kept as published text."
+web_default,cr_low,0.5,g/L,Low end of the urine creatinine range the page uses for its hydration-inversion check.
+web_default,cr_high,2.0,g/L,High end of that range. Together these show that hydration can invert the two classes.
