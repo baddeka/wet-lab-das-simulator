@@ -8,7 +8,8 @@ figure and the sentence around it cannot drift apart.
 from render_page import (CSS, FONTS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
                          enzymes_section, gaps_section, library_table, num,
                          panels_section, pct, positioning_chart,
-                         positioning_legend, rail, references, stat_tiles)
+                         positioning_legend, rail, references, stat_tiles,
+                         hero_strip, limits_callout)
 
 HEAD = """<!DOCTYPE html>
 <html lang="en">
@@ -79,6 +80,7 @@ def page(d):
         "the project. Every figure on this page is computed from %s and written "
         "into the markup at build time.</p>\n</header>" % (lede2, e(d["generated_from"])))
 
+    out.append(hero_strip(d))
     out.append(stat_tiles(d))
 
     out.append(
@@ -178,13 +180,12 @@ def page(d):
     out.append(
         "<section id='gaps'>\n<h2>Honest limits</h2>\n"
         "<p class='h2sub'>What is missing, and what was left out deliberately</p>\n"
-        "%s\n<p class='aside'>The platform covers small molecules recognised by "
-        "an oxidase or by a metabolite-binding transcription factor; protein "
+        "%s\n%s\n<p class='aside'>The platform covers small molecules recognised "
+        "by an oxidase or by a metabolite-binding transcription factor; protein "
         "markers do not fit it at all. Every module shares one ceiling on "
         "sensitivity, set by the host&rsquo;s own peroxide flux rather than by "
-        "any module. And <b>no module here has been validated experimentally</b> "
-        "&mdash; this is a designed and modelled platform, not a working "
-        "one.</p>\n</section>" % gaps_section(d))
+        "any module.</p>\n</section>"
+        % (limits_callout(d), gaps_section(d)))
 
     out.append(
         "<section id='references'>\n<h2>References</h2>\n"

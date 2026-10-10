@@ -196,25 +196,94 @@ def rail():
     return "".join(out)
 
 
-def light_bar(counts, total):
-    """The verdict split, to scale, before the table that details it.
+def hero_strip(d):
+    """One mark per candidate pair, in verdict order.
 
-    45 of 52 pairs fail. That is the headline finding of the screen and it was
-    previously buried in the subtitle of a stat tile.
+    The hero was pure type, and the page's hardest finding - that most of the
+    library does not work - arrived only a thousand pixels later. This puts it
+    under the opening paragraph, at the granularity of real pairs rather than a
+    summary bar: 52 marks, each one a module measured against one study.
+    """
+    order = {"green": 0, "yellow": 1, "red": 2}
+    cands = sorted(d["candidates"], key=lambda c: order[c["light"]])
+    counts = d["counts"]
+    n = len(cands)
+
+    mw, gap, h = 11.0, 3.0, 26.0
+    W = n * (mw + gap) - gap
+    H = h + 30
+
+    out = ['<svg class="strip" viewBox="0 0 %.0f %.0f" role="img" '
+           'aria-label="%d candidate pairs: %d pass, %d pass with sample '
+           'concentration, %d fail">'
+           % (W, H, n, counts.get("green", 0), counts.get("yellow", 0),
+              counts.get("red", 0))]
+
+    x = 0.0
+    spans = {}
+    for c in cands:
+        fill = {"green": "var(--good)", "yellow": "var(--warning)",
+                "red": "var(--critical)"}[c["light"]]
+        op = ".32" if c["light"] == "red" else "1"
+        label = "%s / %s — %s" % (c["biomarker"], c["protein"], c["reason"])
+        out.append('<rect x="%.1f" y="0" width="%.1f" height="%.0f" rx="2.5" '
+                   'fill="%s" fill-opacity="%s"><title>%s</title></rect>'
+                   % (x, mw, h, fill, op, e(label[:150])))
+        s = spans.setdefault(c["light"], [x, x])
+        s[1] = x + mw
+        x += mw + gap
+
+    # Place the group labels, dropping to a second row when two would collide.
+    # The passing groups are only two and five marks wide, so at this scale
+    # their labels are far wider than the bars they name.
+    CHAR, ROW = 6.4, 16.0
+    placed = []
+    for light, text in (("green", "pass"), ("yellow", "with concentration"),
+                        ("red", "fail")):
+        if light not in spans:
+            continue
+        lo, hi = spans[light]
+        label = "%d %s" % (counts.get(light, 0), text)
+        wide = len(label) * CHAR
+        # anchor on whichever end of the group is nearer its own side of the
+        # strip, so a long run is labelled at its far edge rather than butting
+        # against the group before it
+        anchor = "start" if hi < W * 0.5 else "end"
+        tx = lo if anchor == "start" else hi
+        x0 = tx if anchor == "start" else tx - wide
+        x1 = x0 + wide
+        row = 0
+        while any(row == r and not (x1 < a or x0 > b) for r, a, b in placed):
+            row += 1
+        placed.append((row, x0 - 6, x1 + 6))
+        out.append('<text class="striplab" x="%.1f" y="%.1f" text-anchor="%s">'
+                   '%s</text>' % (tx, h + 18 + row * ROW, anchor, e(label)))
+    rows_used = max((r for r, _, _ in placed), default=0) + 1
+    out[0] = out[0].replace('viewBox="0 0 %.0f %.0f"' % (W, H),
+                            'viewBox="0 0 %.0f %.0f"' % (W, h + 14 + rows_used * ROW))
+    out.append("</svg>")
+    return ('<figure class="herofig"><div class="figscroll">%s</div>'
+            '<p class="swipe">Swipe sideways to see the whole library.</p>'
+            '<figcaption>Every module in the library measured against every '
+            'clinical study it could be measured against. Each mark is one '
+            'pair; hover for the verdict. The rejections are the result, not '
+            'the leftovers.</figcaption></figure>' % "".join(out))
+
+
+def light_key(counts):
+    """The verdict split as a line of numbers, for a reader who jumped here.
+
+    The hero strip already draws this at the granularity of individual pairs.
+    Drawing the same proportions a second time would be decoration, so the
+    section that details the pairs gets the count and nothing more.
     """
     order = [("green", "pass outright"), ("yellow", "pass with concentration"),
              ("red", "fail")]
-    bar, key = [], []
-    for light, label in order:
-        n = counts.get(light, 0)
-        if n:
-            bar.append('<span class="%s" style="flex:%d" title="%d %s"></span>'
-                       % (light, n, n, label))
-        key.append('<span><i>%d</i> %s</span>' % (n, e(label)))
-    return ('<div class="lightbar" role="img" aria-label="%d pass, %d with '
-            'concentration, %d fail">%s</div><div class="lightkey">%s</div>'
-            % (counts.get("green", 0), counts.get("yellow", 0),
-               counts.get("red", 0), "".join(bar), "".join(key)))
+    key = ['<span><span class="chip %s"><span class="dot" aria-hidden="true">%s'
+           '</span></span><i>%d</i> %s</span>'
+           % (light, LIGHT_ICON[light], counts.get(light, 0), e(label))
+           for light, label in order]
+    return '<div class="lightkey">%s</div>' % "".join(key)
 
 
 def positioning_legend(rows):
@@ -243,21 +312,27 @@ def positioning_legend(rows):
 
 # --------------------------------------------------------------- sections
 def stat_tiles(d):
-    c = d["counts"]
+    """What the library is made of.
+
+    The pair count moved out of here and into the hero strip, where it is drawn
+    rather than asserted; these three carry the scope and the one threshold
+    everything else is judged against.
+    """
     t = d["thresholds"]
     tiles = [
-        ("modules in the library", len(d["sensors"]), "two types, one skeleton"),
-        ("clinical studies", len(d["studies"]), "%d biomarkers, %d cancers"
+        (len(d["sensors"]), "modules in the library",
+         "across %d biomarkers, two module types, one skeleton"
+         % len({s["biomarker"] for s in d["sensors"]})),
+        (len(d["studies"]), "published clinical studies",
+         "%d biomarkers, %d cancers, every one with a DOI"
          % (len(d["biomarkers"]), len(d["cancers"]))),
-        ("module × study pairs", len(d["candidates"]),
-         "%d pass, %d with concentration, %d fail"
-         % (c.get("green", 0), c.get("yellow", 0), c.get("red", 0))),
-        ("reader floor", "%.3f×" % t["fold_needed"],
-         "smallest fold resolvable at CV %s, n=%d"
+        ("%.3f×" % t["fold_needed"], "the reader floor",
+         "the smallest fold a phone camera resolves at CV %s across %d "
+         "replicates. Everything below this line is invisible however real it is."
          % (pct(t["cv_reader"]), int(t["n_rep"]))),
     ]
     out = ['<div class="tiles">']
-    for label, value, sub in tiles:
+    for value, label, sub in tiles:
         out.append('<div class="tile"><div class="tile-v">%s</div>'
                    '<div class="tile-k">%s</div><div class="tile-s">%s</div></div>'
                    % (value, e(label), e(sub)))
@@ -278,7 +353,7 @@ def library_table(d):
                   key=lambda c: ({"green": 0, "yellow": 1, "red": 2}[c["light"]],
                                  -(c.get("auc_device") or 0),
                                  c["biomarker"], c["protein"]))
-    out = [light_bar(d["counts"], len(rows))]
+    out = [light_key(d["counts"])]
     out.append('<div class="filters" data-js-only>')
     out += [
            '<label>Show <select id="f-light">'
@@ -379,6 +454,24 @@ def enzymes_section(d):
                        'cell’s own peroxide flux, which no enzyme moves.</p>'
                        % (num(spread, 3), num(max(folds) / min(folds), 3)))
     return "\n".join(out)
+
+
+def limits_callout(d):
+    """The hardest sentence, set as the statement it is.
+
+    This used to be the last line of a grey aside under two columns of lists,
+    reading as a footnote. It is the most load-bearing claim on the page: a
+    reader who takes nothing else away should take this.
+    """
+    n_pass = d["counts"].get("green", 0) + d["counts"].get("yellow", 0)
+    return ('<aside class="callout"><p class="callout-lead">No module here has '
+            'been validated experimentally.</p><p class="callout-body">This is a '
+            'designed and modelled platform, not a working one. The %d pairs '
+            'that clear both gates have cleared them <i>on paper</i>: against '
+            'published kinetics, published cohorts and a model whose only '
+            'external check is that it reproduces a peroxide gradient it was not '
+            'fitted to. Nothing here has met a patient sample.</p></aside>'
+            % n_pass)
 
 
 def gaps_section(d):

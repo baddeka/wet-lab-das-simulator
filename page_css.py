@@ -63,14 +63,34 @@ code{font-family:var(--mono);font-size:.86em;background:var(--surface-1);
       padding:26px 28px;margin:26px 0}
 .figure{margin:30px 0}
 
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));
-       gap:1px;margin:44px 0 0;background:var(--ring);
-       border:1px solid var(--ring);border-radius:16px;overflow:hidden}
-.tile{background:var(--surface-1);padding:22px 24px}
-.tile-v{font-family:var(--mono);font-size:32px;line-height:1;font-weight:500;
-        letter-spacing:-.02em}
-.tile-k{font-size:13.5px;color:var(--ink-2);margin-top:9px;line-height:1.4}
-.tile-s{font-size:12.5px;color:var(--ink-3);margin-top:4px;line-height:1.45}
+/* hero: one mark per candidate pair */
+.herofig{margin:40px 0 0;padding:0}
+svg.strip{width:100%;height:auto;display:block}
+.figscroll svg.strip{min-width:560px}
+.striplab{fill:var(--ink-2);font-size:12px;font-family:var(--sans)}
+.herofig figcaption{margin-top:16px;color:var(--ink-3);font-size:13.5px;
+                    line-height:1.6;max-width:62ch}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+       gap:0;margin:52px 0 0;border-top:1px solid var(--axis)}
+.tile{padding:24px 28px 26px 0;border-right:1px solid var(--grid)}
+.tile:last-child{border-right:none}
+.tile-v{font-family:var(--mono);font-size:40px;line-height:1;font-weight:400;
+        letter-spacing:-.03em}
+.tile-k{font-family:var(--serif);font-weight:600;font-size:16px;
+        color:var(--ink-1);margin-top:12px;line-height:1.3}
+.tile-s{font-size:13px;color:var(--ink-3);margin-top:7px;line-height:1.5}
+
+/* the one claim a reader should leave with */
+.callout{margin:0 0 34px;padding:28px 30px;border-radius:16px;
+         background:var(--surface-1);border:1px solid var(--ring);
+         border-left:3px solid var(--critical)}
+.callout-lead{font-family:var(--serif);font-weight:600;
+              font-size:clamp(20px,2.4vw,26px);line-height:1.3;margin:0 0 12px;
+              color:var(--ink-1);max-width:24ch;letter-spacing:-.01em}
+.callout-body{margin:0;color:var(--ink-2);font-size:15px;line-height:1.65;
+              max-width:64ch}
+.callout-body i{font-style:italic;color:var(--ink-1)}
 
 .lightbar{display:flex;height:10px;border-radius:5px;overflow:hidden;
           margin:6px 0 14px;gap:2px}
@@ -168,5 +188,10 @@ footer a{color:var(--series-a)}
   header{padding:40px 0 4px}
   section{margin:64px 0 0}
   .cols{grid-template-columns:1fr;gap:26px}
+  /* stacked, the column rule becomes a stray vertical line beside each tile */
+  .tile{border-right:none;border-bottom:1px solid var(--grid);
+        padding:22px 0 24px}
+  .tile:last-child{border-bottom:none}
+  .callout{padding:22px 20px}
 }
 """
