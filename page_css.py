@@ -154,6 +154,14 @@ tr.hid{display:none}
 table.posdata{margin-top:18px;min-width:560px}
 table.panels{min-width:620px}
 table.enz{min-width:600px}
+table.lib{min-width:720px}
+/* the verdict and type columns carry a chip, not prose */
+.c-v{width:76px} .c-t{width:46px}
+tr.r-main td{border-bottom:none;padding-bottom:4px}
+tr.r-why td{border-bottom:1px solid var(--grid);padding:0 12px 12px;
+            color:var(--ink-3);font-size:12.5px;line-height:1.5}
+td.ctx{white-space:nowrap}
+td.pos{color:var(--ink-2);white-space:nowrap}
 
 .chip{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
       font-size:12px;font-weight:500}

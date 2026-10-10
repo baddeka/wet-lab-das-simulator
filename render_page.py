@@ -57,6 +57,15 @@ def e(x):
     return html.escape("" if x is None else str(x), quote=True)
 
 
+# The reader never sees a CSV column name. These are the only names for the
+# constants that appear on the page.
+FIELD = {"km_uM": "a Michaelis constant", "kcat_s": "a turnover number",
+         "kd_uM": "a dissociation constant"}
+SYMBOL = {"km_uM": "Km", "kcat_s": "kcat", "kd_uM": "Kd"}
+
+THIN = " "  # narrow no-break space, for grouping digits
+
+
 def num(x, nd=3, dash="—"):
     if x is None:
         return dash
@@ -73,13 +82,96 @@ def num(x, nd=3, dash="—"):
     return ("%." + str(nd) + "g") % x
 
 
+def sig(x, n=3, dash="—"):
+    """A concentration, to a fixed number of significant figures.
+
+    One rule for a whole column, so 0.0744 and 0.17 do not sit next to each
+    other at different precisions, and 17000 does not become 1.7x10^4 while the
+    cell above it stays decimal. Digits are grouped rather than exponentiated:
+    a reader comparing 8.2 against 17 000 should not have to parse two
+    notations to do it.
+    """
+    if x is None:
+        return dash
+    if x == 0:
+        return "0"
+    a = abs(x)
+    digits = max(0, n - 1 - int(math.floor(math.log10(a))))
+    s = "%.*f" % (digits, x)
+    if "." in s:
+        s = s.rstrip("0").rstrip(".")
+    whole, _, frac = s.partition(".")
+    if len(whole.lstrip("-")) > 4:
+        sign = "-" if whole.startswith("-") else ""
+        body = whole.lstrip("-")
+        groups = []
+        while len(body) > 3:
+            groups.insert(0, body[-3:])
+            body = body[:-3]
+        groups.insert(0, body)
+        whole = sign + THIN.join(groups)
+    return whole + ("." + frac if frac else "")
+
+
+def fold(x, dash="—"):
+    """A fold change. Always two decimals and a multiplication sign."""
+    return dash if x is None else "%.2f×" % x
+
+
+def position_word(ratio):
+    """Where the analyte sits relative to the constant, in words.
+
+    The bare ratio runs from 0.34 down to 0.00055, which forces a column to mix
+    decimal and scientific notation and tells the reader nothing either way.
+    This is the same phrasing the chart uses.
+    """
+    if ratio is None:
+        return "—"
+    if 0.1 <= ratio <= 10:
+        return "inside the range"
+    # two significant figures, not two decimals: "1800x below" is the true
+    # precision of a ratio built from a published median, "1818.18x" is not
+    if ratio < 1:
+        return "%s× below" % sig(1.0 / ratio, 2)
+    return "%s× above" % sig(ratio, 2)
+
+
 def pct(x, dash="—"):
     return dash if x is None else "%.0f%%" % (100 * x)
 
 
-def chip(light):
-    return ('<span class="chip %s"><span class="dot" aria-hidden="true">%s</span>%s</span>'
-            % (light, LIGHT_ICON[light], LIGHT_WORD[light]))
+LIGHT_SHORT = {"green": "pass", "yellow": "conc.", "red": "fail"}
+
+# "Urine (morning spot; total after hydrolysis)" wrapped to four lines in a
+# table cell. The preparation still matters, so it is kept, just not spelled
+# out at full length in a column forty pixels wide.
+FLUID_SHORT = [
+    ("morning spot; total after hydrolysis", "urine, total"),
+    ("morning spot; free", "urine, free"),
+    ("spot preoperative", "urine, pre-op"),
+    ("supernatant after DRE", "urine, supernatant"),
+    ("sediment after DRE", "urine, sediment"),
+    ("pre-biopsy no DRE", "urine, pre-biopsy"),
+    ("serum; total after hydrolysis", "serum, total"),
+    ("morning spot", "urine, spot"),
+    ("24-h", "urine, 24 h"),
+]
+
+
+def _fluid_short(biofluid):
+    if not biofluid:
+        return "—"
+    for long, short in FLUID_SHORT:
+        if long in biofluid:
+            return short
+    return biofluid.split("(")[0].strip().lower()
+
+
+def chip(light, short=False):
+    words = LIGHT_SHORT if short else LIGHT_WORD
+    return ('<span class="chip %s" title="%s"><span class="dot" '
+            'aria-hidden="true">%s</span>%s</span>'
+            % (light, LIGHT_WORD[light], LIGHT_ICON[light], words[light]))
 
 
 # --------------------------------------------------------------- the chart
@@ -158,17 +250,20 @@ def positioning_chart(rows):
     # The same numbers as a table. Two jobs: the accessibility fallback the
     # chart needs, and the readable version on a phone, where the figure stops
     # shrinking and scrolls sideways instead.
+    anchors = sorted({r["anchor_name"] for r in rows})
+    head = " / ".join(anchors) if len(anchors) > 1 else anchors[0]
     tab = ['<table class="posdata"><thead><tr><th>module</th><th>biomarker</th>'
-           '<th class="n">constant</th><th class="n">clinical range</th>'
-           '<th class="n">analyte / constant</th></tr></thead><tbody>']
+           '<th class="n">%s<span class="u">, µM</span></th>'
+           '<th class="n">clinical range<span class="u">, µM</span></th>'
+           '<th>analyte sits</th></tr></thead><tbody>' % head]
     for r in rows:
         tab.append('<tr><td class="bm">%s</td><td>%s</td>'
-                   '<td class="n">%s = %s <span class="u">µM</span></td>'
-                   '<td class="n">%s – %s <span class="u">µM</span></td>'
-                   '<td class="n">%s</td></tr>'
-                   % (e(r["protein"]), e(r["biomarker"]), r["anchor_name"],
-                      num(r["anchor_uM"]), num(r["healthy_uM"]),
-                      num(r["sick_uM"]), num(r["ratio_to_anchor"], 2)))
+                   '<td class="n">%s</td><td class="n">%s–%s</td>'
+                   '<td class="pos">%s</td></tr>'
+                   % (e(r["protein"]), e(r["biomarker"]),
+                      sig(r["anchor_uM"]),
+                      sig(r["healthy_uM"]), sig(r["sick_uM"]),
+                      position_word(r["ratio_to_anchor"])))
     tab.append("</tbody></table>")
 
     return ('<div class="figscroll">%s</div>'
@@ -609,28 +704,36 @@ def library_table(d):
            + '</select></label>',
            '<span class="count" id="f-count"></span></div>']
     out.append('<div class="figscroll"><table class="lib"><thead><tr>'
-               '<th>verdict</th><th>biomarker</th><th>module</th><th>type</th>'
-               '<th>cancer / fluid</th><th class="n">clinical</th>'
-               '<th class="n">device</th><th class="n">conc.</th>'
-               '<th class="n">AUC</th><th class="n">sens=spec</th>'
-               '<th>why</th></tr></thead><tbody>')
+               '<th class="c-v"></th><th>biomarker</th><th>module</th>'
+               '<th class="c-t">type</th><th>study</th>'
+               '<th class="n">clinical</th><th class="n">device</th>'
+               '<th class="n">conc.</th><th class="n">AUC</th>'
+               '<th class="n">sens<span class="u">=</span>spec</th>'
+               '</tr></thead><tbody>')
     for c in rows:
-        ctx = (("%s / %s" % (c["cancer"], c["biofluid"]))
-               if c["cancer"] else "no clinical row")
+        # One line, not four. The organism moved to the enzyme table and the
+        # references, where it is stated once instead of under every row.
+        study = (("%s · %s" % (c["cancer"], _fluid_short(c["biofluid"])))
+                 if c["cancer"] else "no clinical study")
         out.append(
-            '<tr data-light="%s" data-bm="%s">'
-            '<td>%s</td><td class="bm">%s</td><td>%s<div class="org">%s</div></td>'
-            '<td><span class="tt %s">%s</span></td><td class="ctx">%s</td>'
+            '<tr data-light="%s" data-bm="%s" class="r-main">'
+            '<td class="c-v">%s</td><td class="bm">%s</td><td>%s</td>'
+            '<td class="c-t"><span class="tt %s" title="type %s">%s</span></td>'
+            '<td class="ctx">%s</td>'
             '<td class="n">%s</td><td class="n">%s</td><td class="n">%s</td>'
-            '<td class="n">%s</td><td class="n">%s</td><td class="why">%s</td></tr>'
-            % (c["light"], e(c["biomarker"]), chip(c["light"]), e(c["biomarker"]),
-               e(c["protein"]), e(c["organism"] or ""),
-               c["module_type"], c["module_type"], e(ctx),
-               (num(c["clinical_fold"], 3) + "×") if c["clinical_fold"] else "—",
-               (num(c["device_fold"], 3) + "×") if c["device_fold"] else "—",
-               (num(c["required_conc"], 2) + "×") if c["required_conc"] else "—",
-               num(c.get("auc_device"), 3), pct(c.get("sensitivity")),
-               e(c["reason"])))
+            '<td class="n">%s</td><td class="n">%s</td></tr>'
+            % (c["light"], e(c["biomarker"]), chip(c["light"], short=True),
+               e(c["biomarker"]), e(c["protein"]),
+               c["module_type"], c["module_type"], c["module_type"],
+               e(study),
+               fold(c["clinical_fold"]), fold(c["device_fold"]),
+               fold(c["required_conc"]),
+               num(c.get("auc_device"), 3), pct(c.get("sensitivity"))))
+        # The reason gets the full width underneath rather than a column that
+        # squeezes a sentence into twenty characters.
+        out.append('<tr data-light="%s" data-bm="%s" class="r-why">'
+                   '<td></td><td colspan="9">%s</td></tr>'
+                   % (c["light"], e(c["biomarker"]), e(c["reason"])))
     out.append("</tbody></table></div>")
     n_pass = sum(1 for c in rows if c["light"] != "red")
     out.append('<button class="more" id="f-more" data-js-only aria-expanded="false">Show the %d rejected pairs</button>'
@@ -722,10 +825,14 @@ def gaps_section(d):
     out = ['<div class="cols">']
     out.append('<div><h3>Needed and missing</h3><ul class="gap">')
     for m in g["missing_constants"]:
-        need = ", ".join(m["missing"])
-        out.append('<li><b>%s</b> — %s (type %s) has no %s, so no response '
-                   'can be computed. Not estimated from a similar protein.</li>'
-                   % (e(m["biomarker"]), e(m["protein"]), m["module_type"], e(need)))
+        # FIELD, not the CSV column name: the reader is owed "a dissociation
+        # constant", not "kd_uM".
+        need = " and ".join(FIELD.get(f, f) for f in m["missing"])
+        syms = ", ".join(SYMBOL.get(f, f) for f in m["missing"])
+        out.append('<li><b>%s</b> — no one has published %s (%s) for '
+                   '<b>%s</b>, so its response cannot be computed. Not estimated '
+                   'from a similar protein.</li>'
+                   % (e(m["biomarker"]), e(need), e(syms), e(m["protein"])))
     for b in g["no_clinical"]:
         out.append('<li><b>%s</b> — a module exists but clinical.csv has no '
                    'usable distribution, so stage 1 cannot run.</li>' % e(b))
@@ -822,19 +929,21 @@ JS = """
     n.style.display = n.tagName === 'BUTTON' ? 'inline-block' : 'flex';
   });
 
-  var rows = [].slice.call(document.querySelectorAll('table.lib tbody tr')),
+  var rows = [].slice.call(document.querySelectorAll('table.lib tbody tr.r-main')),
+      whys = [].slice.call(document.querySelectorAll('table.lib tbody tr.r-why')),
       L = document.getElementById('f-light'), B = document.getElementById('f-bm'),
       C = document.getElementById('f-count'), M = document.getElementById('f-more'),
       open = false;
 
   function apply(){
     var l = L ? L.value : '', b = B ? B.value : '', n = 0, hidden = 0;
-    rows.forEach(function(r){
+    rows.forEach(function(r, i){
       var match = (!l || r.dataset.light === l) && (!b || r.dataset.bm === b);
       // the fold only applies when no filter is asking for the rejections
       var folded = !open && !l && r.dataset.light === 'red';
       if (match && folded) hidden++;
       r.classList.toggle('hid', !match || folded);
+      if (whys[i]) whys[i].classList.toggle('hid', !match || folded);
       if (match && !folded) n++;
     });
     if (C) C.textContent = n + ' shown';

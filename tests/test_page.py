@@ -80,7 +80,7 @@ def main():
                   c["reason"][:70])
     check("every rejection reason reaches the page", True)
 
-    n_rows = len(re.findall(r'<tr data-light=', html))
+    n_rows = len(re.findall(r'class="r-main"', html))
     check("every candidate has a row", n_rows == len(data["candidates"]),
           (n_rows, len(data["candidates"])))
 
