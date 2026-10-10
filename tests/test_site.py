@@ -65,15 +65,15 @@ def main():
         check("site.html's config matches the data files", in_source == expected,
               "run: python build_site.py --sync")
 
-    built_path = os.path.join(ROOT, "index.html")
-    check("index.html exists", os.path.exists(built_path),
+    built_path = os.path.join(ROOT, "simulator.html")
+    check("simulator.html exists", os.path.exists(built_path),
           "run: python build_site.py")
     if os.path.exists(built_path):
-        built = read("index.html")
+        built = read("simulator.html")
         in_built = build_site.extract(built)
-        check("index.html's config matches the data files", in_built == expected,
+        check("simulator.html's config matches the data files", in_built == expected,
               "the served page is stale; run: python build_site.py")
-        check("index.html is a standalone document",
+        check("simulator.html is a standalone document",
               built.lstrip().startswith("<!DOCTYPE html>"))
 
     print()

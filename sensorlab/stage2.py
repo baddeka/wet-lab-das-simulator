@@ -31,6 +31,8 @@ import numpy as np
 
 import das_model
 
+from . import performance
+
 GREEN, YELLOW, RED = "green", "yellow", "red"
 
 
@@ -99,13 +101,6 @@ def _fold_B(p, binders):
         occupancy_healthy=th_h, occupancy_sick=th_s)
 
 
-def _fold_C(p, binders):
-    """Type C: occupancy itself is the readout. No gain, no transcription."""
-    th_h, th_s = _theta(binders, p)
-    return (th_s / th_h if th_h > 0 else None), dict(
-        occupancy_healthy=th_h, occupancy_sick=th_s)
-
-
 def _fold_A_binders(p, binders):
     """Type A keeps its own ODE; only the target concentration enters here.
 
@@ -118,7 +113,7 @@ def _fold_A_binders(p, binders):
     return _fold_A(p, c_h, c_s)
 
 
-BRANCH = {"A": _fold_A_binders, "B": _fold_B, "C": _fold_C}
+BRANCH = {"A": _fold_A_binders, "B": _fold_B}
 
 
 def cross_binders(sensor, bundle):
@@ -129,7 +124,7 @@ def cross_binders(sensor, bundle):
     cross-reactivity - either the data file records the same protein twice, or
     this returns nothing.
     """
-    need = "kd_uM" if sensor.module_type in ("B", "C") else "km_uM"
+    need = "kd_uM" if sensor.module_type == "B" else "km_uM"
     return [o for o in bundle["sensors"]
             if o.protein_name == sensor.protein_name
             and o.biomarker != sensor.biomarker
@@ -198,12 +193,12 @@ def feasibility(sensor, s1, bundle):
         competitors.append(dict(biomarker=other.biomarker, kd_uM=other.kd_uM,
                                 healthy_uM=lv[0], sick_uM=lv[1],
                                 source_doi=lv[2].source_doi))
-        if sensor.module_type in ("B", "C"):
+        if sensor.module_type == "B":
             binders.append((other.kd_uM, lv[0], lv[1]))
     out["competitors"] = competitors
     out["competitors_unevaluated"] = sorted(set(unevaluated))
 
-    if competitors and sensor.module_type in ("B", "C"):
+    if competitors and sensor.module_type == "B":
         if pf["hill_n_binding"] != 1.0:
             out["notes"].append(
                 "the competitive occupancy sum is exact only at Hill n = 1, and "
@@ -296,6 +291,18 @@ def feasibility(sensor, s1, bundle):
             and max(f_ko, 1 / f_ko)
             > max(f_wt, 1 / f_wt) * pf["knockout_gain_min"])
 
+    # --- what the device would achieve on patients -------------------------
+    # The fold alone is not a diagnostic: the biological spread is squeezed by
+    # the same transfer function as the signal, and the reader's own noise sits
+    # on top. performance.py propagates both.
+    best_mag = best[0]
+    perf, perf_why = (None, "no device fold")
+    if best_mag:
+        perf, perf_why = performance.separation(s1, best_mag, pf)
+    out["performance"], out["performance_missing"] = perf, perf_why
+    if perf:
+        out["sens_at_90_spec"] = performance.at_cutoff(s1, perf, 0.90)
+
     # --- the light ---------------------------------------------------------
     scen_mag = None if base_fold is None else max(base_fold, 1.0 / base_fold)
     if scen_mag is not None and scen_mag >= need:
@@ -317,7 +324,7 @@ def feasibility(sensor, s1, bundle):
 def _red_reason(out, sensor, pf, anchor_name, ratio):
     """Name the dominant cause, in the vocabulary the report uses."""
     best = out["best_fold_magnitude"]
-    if sensor.module_type in ("B", "C"):
+    if sensor.module_type == "B":
         if ratio < pf["kd_ratio_lo"]:
             return ("analyte stays below %s even concentrated %gx: analyte/%s = "
                     "%.3g, so the sensor sits in its dead zone"

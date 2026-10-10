@@ -1,0 +1,9 @@
+biomarker,protein_name,organism,kd_uM,source_doi,reason_excluded,notes
+Spermine,iPASnFR-H,Parageobacillus caldoxylosilyticus,15,10.1101/2024.08.21.609037,no reporter gene,"PcPotD binding protein with an inserted circularly permuted sfVenus: the analyte binds and fluorescence changes directly. There is no transcription and no reporter gene, so the module does not use the platform's fixed skeleton - it replaces it. A real sensor, but a different architecture, not a module. Preprint. Same Kd as for spermidine, so it does not discriminate the two polyamines."
+Spermine,iPASnFR-L,Parageobacillus caldoxylosilyticus,130,10.1101/2024.08.21.609037,no reporter gene,"Low-affinity variant, 0.13 mM converted to 130 uM. Same architectural objection."
+Spermidine,iPASnFR-H,Parageobacillus caldoxylosilyticus,15,10.1101/2024.08.21.609037,no reporter gene,"High-affinity variant. Same Kd as for spermine."
+Spermidine,iPASnFR-L,Parageobacillus caldoxylosilyticus,2300,10.1101/2024.08.21.609037,no reporter gene,"Low-affinity variant, 2.3 mM converted to 2300 uM."
+Lactate,R-iLACCO1 (purified),Escherichia coli,74,10.1038/s41467-023-42230-5,no reporter gene,"LldR binding domain fused to cpmApple. Fluorescence changes on binding; no transcription. Purified-protein Kd."
+Lactate,R-iLACCO1 (in situ),Escherichia coli,680,10.1038/s41467-023-42230-5,no reporter gene,"Apparent in-situ Kd in HeLa cells, 9x weaker than purified."
+Lactate,eLACCO2.1 (purified),Thermus thermophilus,1900,10.1038/s41467-023-42230-5,no reporter gene,"TTHA0766-derived engineered sensor. 1.9 mM converted to 1900 uM. Delta-F/F = 14 purified at 10 mM lactate."
+Lactate,eLACCO2.1 (in situ),Thermus thermophilus,580,10.1038/s41467-023-42230-5,no reporter gene,"Apparent in-situ Kd in HeLa cells. Delta-F/F = 8.8 +/- 0.2."

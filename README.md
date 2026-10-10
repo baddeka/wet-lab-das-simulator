@@ -1,14 +1,74 @@
-# DAS Branch Simulator
+# Biosensor module platform
 
-Interactive two-compartment model of a whole-cell biosensor for **N1,N12-diacetylspermine
-(DAS)**, a urinary biomarker for colorectal cancer.
+One plasmid skeleton that never changes — origin, resistance, reporter, and two fixed
+insertion sites. Between them sits a module that recognises one biomarker. Another
+biomarker, another module, same skeleton. Colorectal cancer stays as the worked example,
+not as the project.
 
-The signal chain is `DAS → DAS oxidase → H₂O₂ → OxyR → GFP → phone reader`. The page lets
-you set the reagents, the culture and the reader, and reports the one number that decides
-whether the device works: the fold change between a healthy sample and one at the clinical
-cutoff, against the noise the reader can actually resolve.
+**[Open the platform →](https://baddeka.github.io/wet-lab-das-simulator/)** ·
+[the worked example, every parameter exposed →](https://baddeka.github.io/wet-lab-das-simulator/simulator.html)
 
-**[Open the simulator →](https://baddeka.github.io/wet-lab-das-simulator/)**
+## Two module types
+
+| | mechanism | needs | why it exists |
+|---|---|---|---|
+| **A** | analyte → oxidase → H₂O₂ → OxyR → promoter → GFP | `km_uM`, `kcat_s` | amplifies, but competes with the cell's own peroxide |
+| **B** | analyte → transcription factor → promoter → GFP | `kd_uM` | oxidases are scarce; without this the platform has a ceiling |
+
+A sensor that carries its own fluorophore (iPASnFR, eLACCO) is deliberately **not** a
+module: it has no transcription and no reporter gene, so it replaces the skeleton instead
+of plugging into it. Those are kept in `data/out_of_scope.csv` with the reason.
+
+## The model is a selection tool
+
+For each candidate biomarker there is one question: will there be enough signal. Trying
+them experimentally is not possible, so the model answers it.
+
+**In:** biomarker, its published healthy and sick distributions, the kinetics of a sensing
+element. **Out:** passes or not, the sample concentration needed, whether a scavenger
+knockout helps, and the sensitivity and specificity that follow at our own limit of
+detection.
+
+Two gates, in order. **Stage 1** asks whether the cohorts separate at all — from the
+reported AUC where one exists, otherwise from Welch's t and Cohen's d rebuilt from the
+summary statistics. **Stage 2** asks whether a module could read that difference, and runs
+only on what survived. Rejections are reported with the stage that produced them;
+currently 45 of 52 module × study pairs fail, and those rows are the point.
+
+### Panels
+
+A single metabolite rarely gives usable specificity, so the model also scores
+combinations. How much a panel gains depends on how its markers co-vary, which needs them
+measured in the same patients — and no source in the library reports that. Every panel is
+therefore a **range** over the whole plausible correlation span, never a point estimate,
+and the verdict comes from the worst point of the range.
+
+> Note on the maths: correlation does not simply degrade a panel. With equal effect sizes
+> it does, monotonically. With unequal effect sizes the curve is U-shaped and diverges as
+> rho approaches 1, because correlated markers that respond by different amounts let their
+> *difference* cancel shared variation. That gain is real but useless here, since it needs
+> rho known exactly. `tests/test_platform.py` pins both behaviours.
+
+## Running it
+
+```bash
+pip install -r requirements.txt
+python build_platform.py        # the screen -> platform.json -> index.html
+python build_site.py --sync     # the worked example -> simulator.html
+python screen.py                # the same screen, on the terminal
+python enzymes.py               # swap enzymes on one biomarker
+python tests/test_platform.py   # panel and performance maths
+python tests/test_branches.py   # module branches, loaders, refusal paths
+python tests/test_site.py       # page and data agree, prose included
+python tests/test_regression.py # the frozen two-compartment baseline
+```
+
+## Honest limits
+
+Small molecules recognised by an oxidase or a metabolite-binding transcription factor.
+Protein markers do not fit. Every module shares one ceiling on sensitivity, set by the
+host's own peroxide flux rather than by any module. **No module has been validated
+experimentally** — this is a designed and modelled platform, not a working one.
 
 ## What the model says
 

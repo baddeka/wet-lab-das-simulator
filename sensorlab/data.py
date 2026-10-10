@@ -13,9 +13,20 @@ LN2 = math.log(2.0)
 class Sensor:
     """One row of sensors.csv: a protein that could read one biomarker."""
 
+    # Two module types, because the platform has one plasmid skeleton that never
+    # changes: ori, resistance, reporter, two fixed insertion sites. A module is
+    # what goes between those sites, and it has to hand its signal to the
+    # skeleton's reporter.
+    #
+    #   A  analyte -> oxidase -> H2O2 -> OxyR -> promoter -> GFP
+    #   B  analyte -> transcription factor -> promoter -> GFP
+    #
+    # A binding protein whose own fluorescence changes (iPASnFR, eLACCO) is not
+    # a module: it has no transcription and no reporter gene, so it replaces the
+    # skeleton instead of plugging into it. Those are kept in
+    # data/out_of_scope.csv with the reason, not silently dropped.
     REQUIRED = {"A": ("km_uM", "kcat_s"),
-                "B": ("kd_uM",),
-                "C": ("kd_uM",)}
+                "B": ("kd_uM",)}
 
     def __init__(self, row):
         self.biomarker = row["biomarker"]
@@ -33,8 +44,11 @@ class Sensor:
         self.notes = row["notes"]
 
         if self.module_type not in self.REQUIRED:
-            raise ValueError("module_type %r for %s is not A, B or C"
-                             % (self.module_type, self.protein_name))
+            raise ValueError(
+                "module_type %r for %s is not A or B. The platform has two "
+                "module types; a sensor that carries its own fluorophore "
+                "belongs in data/out_of_scope.csv"
+                % (self.module_type, self.protein_name))
 
     @property
     def label(self):

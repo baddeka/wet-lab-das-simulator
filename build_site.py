@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Build index.html from site.html, with the model constants injected from data/.
+"""Build simulator.html from site.html, with the constants injected from data/.
+
+This is the worked example: one biomarker, every parameter exposed. index.html
+is the platform and is built by build_platform.py.
 
 Two jobs, and the second is the important one.
 
@@ -18,7 +21,7 @@ Two jobs, and the second is the important one.
    The consequence worth remembering: to change what the published page
    computes, edit a CSV and rebuild. Never edit a number in site.html.
 
-    python build_site.py                 write index.html
+    python build_site.py                 write simulator.html
     python build_site.py --sync          also refresh site.html's own copy of
                                          the block, so the committed source is
                                          not stale
@@ -211,7 +214,7 @@ img{{max-width:100%}}
 def main(argv):
     sync = "--sync" in argv
     rest = [a for a in argv if not a.startswith("--")]
-    out = rest[0] if rest else os.path.join(HERE, "index.html")
+    out = rest[0] if rest else os.path.join(HERE, "simulator.html")
 
     config = build_config()
     source = open(SRC, encoding="utf-8").read()

@@ -27,3 +27,6 @@ kd_ratio_lo,0.1,dimensionless,threshold,Analyte/Kd below this is called below-Kd
 kd_ratio_hi,10.0,dimensionless,threshold,Analyte/Kd above this is called saturated.
 conversion_target,0.95,fraction,threshold,"Fraction of the analyte that must be turned over inside the read time. Sets the minimum enzyme loading reported by the enzyme comparison."
 knockout_gain_min,1.02,fold,threshold,"Relative fold improvement a scavenger knockout must give before it is called helpful, rather than noise in the integration."
+panel_rho_independent,0.0,dimensionless,panel,"Correlation assumed between markers from unrelated pathways. The optimistic bound on a panel: markers carry independent information."
+panel_rho_correlated,0.7,dimensionless,panel,"Correlation assumed between markers of the same pathway, such as putrescine, spermidine and spermine, which share the polyamine biosynthetic route. The pessimistic bound. Neither value is measured: no source in clinical.csv reports a covariance between markers in the same patients, so panels are reported as a range between these two and never as a point estimate."
+panel_max_size,4,count,panel,Largest panel considered. Beyond this the combinatorics stop being informative given how few modules clear stage 2.

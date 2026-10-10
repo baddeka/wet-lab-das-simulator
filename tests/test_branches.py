@@ -194,9 +194,12 @@ def test_stage2(bundle):
     r = stage2.feasibility(sensor(module_type="B"), s1, b)
     check("type B without Kd refuses",
           r["light"] == stage2.RED and "kd_uM" in r["reason"], r["reason"])
-    r = stage2.feasibility(sensor(module_type="C"), s1, b)
-    check("type C without Kd refuses",
-          r["light"] == stage2.RED and "kd_uM" in r["reason"], r["reason"])
+    try:
+        sensor(module_type="C", kd_uM=1)
+        check("type C is rejected: the platform has two module types", False)
+    except ValueError as exc:
+        check("type C is rejected: the platform has two module types",
+              "out_of_scope" in str(exc), exc)
     try:
         sensor(module_type="D", kd_uM=1)
         check("an unknown module type raises", False)
@@ -204,62 +207,42 @@ def test_stage2(bundle):
         check("an unknown module type raises", True)
 
     s1_bad_units = stage1.assess(_passing_row(units="nmol/mg DNA", auc=0.9), b)
-    r = stage2.feasibility(sensor(module_type="C", kd_uM=10), s1_bad_units, b)
+    r = stage2.feasibility(sensor(module_type="B", kd_uM=10), s1_bad_units, b)
     check("unconvertible units stop stage 2",
           r["light"] == stage2.RED and "not convertible" in r["reason"], r["reason"])
 
-    # --- the three branches all run and produce a finite fold ---
-    for mt, kw in (("A", dict(km_uM=310, kcat_s=158)),
-                   ("B", dict(kd_uM=2.0)),
-                   ("C", dict(kd_uM=2.0))):
+    for mt, kw in (("A", dict(km_uM=310, kcat_s=158)), ("B", dict(kd_uM=2.0))):
         r = stage2.feasibility(sensor(module_type=mt, **kw), s1, b)
         ok = r.get("best_fold_magnitude") is not None and r["best_fold_magnitude"] > 0
         check("type %s branch runs" % mt, ok, r["reason"])
 
-    # --- type C in the linear regime reproduces the clinical ratio ---
-    r = stage2.feasibility(sensor(module_type="C", kd_uM=1e6), s1, b)
-    check("type C far below Kd returns the clinical fold",
-          close(r["best_fold_magnitude"], 3.0, rel=1e-3), r["best_fold_magnitude"])
-
-    # --- type C saturated loses the signal ---
-    r = stage2.feasibility(sensor(module_type="C", kd_uM=1e-6), s1, b)
-    check("type C saturated is red and says so",
+    r = stage2.feasibility(sensor(module_type="B", kd_uM=1e-6), s1, b)
+    check("a saturated type B is red and says so",
           r["light"] == stage2.RED and "saturated" in r["reason"], r["reason"])
 
-    # --- type C has no amplification: its fold cannot exceed the clinical fold
-    r = stage2.feasibility(sensor(module_type="C", kd_uM=2.0), s1, b)
-    check("type C does not amplify", r["best_fold_magnitude"] <= 3.0 + 1e-9,
-          r["best_fold_magnitude"])
-
-    # --- type B does amplify through the promoter, and the read time enters ---
     sb = sensor(module_type="B", kd_uM=2.0)
     short = dict(b, scenario=dict(b["scenario"], T_read=60.0))
     long_ = dict(b, scenario=dict(b["scenario"], T_read=3600.0))
-    r_short = stage2.feasibility(sb, s1, short)
-    r_long = stage2.feasibility(sb, s1, long_)
     check("type B response depends on the read time",
-          not close(r_short["best_fold_magnitude"], r_long["best_fold_magnitude"]),
-          (r_short["best_fold_magnitude"], r_long["best_fold_magnitude"]))
+          not close(stage2.feasibility(sb, s1, short)["best_fold_magnitude"],
+                    stage2.feasibility(sb, s1, long_)["best_fold_magnitude"]))
 
-    # --- type C is instantaneous, so the read time must not matter ---
-    sc = sensor(module_type="C", kd_uM=2.0)
-    check("type C ignores the read time",
-          close(stage2.feasibility(sc, s1, short)["best_fold_magnitude"],
-                stage2.feasibility(sc, s1, long_)["best_fold_magnitude"]),
-          "read time leaked into the type C branch")
+    need = stage2.fold_needed(b["platform"])
+    check("fold_needed and max_cv invert each other",
+          close(stage2.max_cv(need, b["platform"]), b["platform"]["cv_reader"]))
 
     # --- competition for the binding site ---
     # Two sensors.csv rows, one protein, two analytes: that is the evidence of
     # cross-reactivity, and it must come out of the data, never from a default.
-    shared = [sensor(biomarker="X", module_type="C", protein_name="shared", kd_uM=2.0),
-              sensor(biomarker="Y", module_type="C", protein_name="shared", kd_uM=2.0)]
+    shared = [sensor(biomarker="X", module_type="B", protein_name="shared", kd_uM=2.0),
+              sensor(biomarker="Y", module_type="B", protein_name="shared", kd_uM=2.0)]
     rival_row = clinical(biomarker="Y", healthy_value=5.0, sick_value=5.0)
     bc = dict(b, sensors=shared, clinical=list(b["clinical"]) + [rival_row])
 
     check("cross-binders are found in sensors.csv",
           [o.biomarker for o in stage2.cross_binders(shared[0], bc)] == ["Y"])
     check("a protein listed once has no cross-binders",
-          stage2.cross_binders(sensor(module_type="C", kd_uM=1), bc) == [])
+          stage2.cross_binders(sensor(module_type="B", kd_uM=1), bc) == [])
 
     lone = stage2.feasibility(shared[0], s1, dict(b, sensors=shared))
     check("a competitor with no level in this study is flagged, not assumed zero",
@@ -280,10 +263,9 @@ def test_stage2(bundle):
           (withc["best_fold_magnitude"], clean))
 
     # a competitor with a far weaker Kd should barely matter
-    weak = [shared[0], sensor(biomarker="Y", module_type="C",
+    weak = [shared[0], sensor(biomarker="Y", module_type="B",
                               protein_name="shared", kd_uM=1e7)]
-    r_weak = stage2.feasibility(weak[0], s1_shared,
-                                dict(bc, sensors=weak))
+    r_weak = stage2.feasibility(weak[0], s1_shared, dict(bc, sensors=weak))
     check("a very weak competitor barely changes the fold",
           close(r_weak["best_fold_magnitude"], max(clean, 1 / clean), rel=1e-3),
           (r_weak["best_fold_magnitude"], clean))
@@ -301,11 +283,6 @@ def test_stage2(bundle):
               sensor(module_type="A", km_uM=310, kcat_s=158), s1, b
           )["selectivity_source"])
 
-    # --- the reader threshold is self-consistent ---
-    need = stage2.fold_needed(b["platform"])
-    check("fold_needed and max_cv invert each other",
-          close(stage2.max_cv(need, b["platform"]), b["platform"]["cv_reader"]),
-          stage2.max_cv(need, b["platform"]))
 
 
 # ----------------------------------------------------------------- data files
