@@ -9,7 +9,8 @@ from render_page import (CSS, FONTS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
                          enzymes_section, gaps_section, library_table, num,
                          panels_section, pct, positioning_chart,
                          positioning_legend, rail, references, stat_tiles,
-                         hero_strip, limits_callout)
+                         hero_strip, limits_callout,
+                         mechanism_figure, enzyme_charts)
 
 HEAD = """<!DOCTYPE html>
 <html lang="en">
@@ -147,7 +148,8 @@ def page(d):
         out.append(
             "<section id='enzymes'>\n<h2>Swapping the enzyme</h2>\n"
             "<p class='h2sub'>Catalytic efficiency is not the lever it looks "
-            "like</p>\n%s\n</section>" % enz)
+            "like</p>\n%s\n%s\n</section>"
+            % (enzyme_charts(d, "DiAcSpm"), enz))
 
     out.append(
         "<section id='model'>\n<h2>The model underneath</h2>\n"
@@ -170,12 +172,13 @@ def page(d):
         "audible over the cell&rsquo;s own. That is why fewer cells and a "
         "shorter read both help &mdash; and why deleting the scavengers does "
         "not: it lifts resting peroxide above the OxyR set point, and the "
-        "reporter starts switched on with nowhere to go.</p>\n"
+        "reporter starts switched on with nowhere to go.</p>\n%s\n"
         "<p class='sub'>The worked example, with every parameter exposed: "
         "<a href='simulator.html'>the diacetylspermine simulator</a>.</p>\n"
         "</section>"
         % (num(a["k_mem"]), num(a["P_endo"]), num(a["resting_h2o2"]),
-           num(a["k_scav"]), num(a["K_oxyr"]), num(a["gradient"], 2)))
+           num(a["k_scav"]), num(a["K_oxyr"]), num(a["gradient"], 2),
+           mechanism_figure(a)))
 
     out.append(
         "<section id='gaps'>\n<h2>Honest limits</h2>\n"

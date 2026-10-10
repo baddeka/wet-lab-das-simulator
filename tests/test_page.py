@@ -109,8 +109,15 @@ def main():
     check("the page has more than one table", len(tables) > 1,
           collections.Counter(tables))
 
-    check("figures stop shrinking before they become illegible",
-          "min-width:660px" in html and "svg.arch{min-width" in html)
+    # every figure, not just the two that had the problem first
+    import re as _re
+    drawn = set(_re.findall(r'<svg class="(\w+)"', html))
+    guarded = set(_re.findall(r'svg\.(\w+)\{min-width', html))
+    check("every figure stops shrinking before it becomes illegible",
+          drawn <= guarded, "unguarded: %s" % (drawn - guarded))
+    unscrolled = [m.group(1) for m in _re.finditer(r'<svg class="(\w+)"', html)
+                  if "figscroll" not in html[max(0, m.start() - 220):m.start()]]
+    check("every figure can scroll sideways", not unscrolled, unscrolled)
     check("there is a narrow-screen breakpoint", "@media (max-width:" in html)
     check("the chart has a table fallback", 'class="posdata"' in html)
 

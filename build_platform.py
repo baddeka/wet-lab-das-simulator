@@ -21,6 +21,7 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
+import enzymes                                             # noqa: E402
 import sensorlab                                           # noqa: E402
 from sensorlab import (data, panels, performance, report,   # noqa: E402
                        stage1, stage2, tables)
@@ -141,6 +142,67 @@ def export_panel(p, platform):
     )
 
 
+def oxyr_anchors(pf):
+    """The chassis constants, plus where OxyR actually sits in each strain.
+
+    The knockout result is the least intuitive thing the model says - removing
+    the enzymes that destroy the signal makes the signal worse - and it comes
+    down to two numbers: resting cytoplasmic peroxide against the OxyR
+    half-activation point. Computed here so the page can draw it rather than
+    assert it.
+    """
+    n = pf["n_hill"]
+    k = pf["K_oxyr"]
+
+    def activation(x):
+        return x ** n / (k ** n + x ** n)
+
+    rest_wt = pf["P_endo"] / pf["k_scav"]
+    rest_ko = pf["P_endo"] / pf["k_scav_knockout"]
+    return dict(
+        k_mem=_f(pf["k_mem"]), P_endo=_f(pf["P_endo"]),
+        k_scav=_f(pf["k_scav"]), K_oxyr=_f(k), n_hill=_f(n),
+        resting_h2o2=_f(rest_wt, 4),
+        gradient=_f(1.0 + pf["k_scav"] / pf["k_mem"], 2),
+        k_scav_knockout=_f(pf["k_scav_knockout"]),
+        resting_knockout=_f(rest_ko, 4),
+        activation_wt=_f(activation(rest_wt), 4),
+        activation_knockout=_f(activation(rest_ko), 4),
+        headroom_wt=_f(1.0 - activation(rest_wt), 4),
+        headroom_knockout=_f(1.0 - activation(rest_ko), 4),
+    )
+
+
+def enzyme_loading(bundle, cands):
+    """Per type A enzyme: efficiency, the fold it delivers, and what it costs.
+
+    The three quantities the enzyme-comparison section argues about, in one
+    place, so the page can plot them against each other instead of asserting the
+    relationship in a footnote.
+    """
+    pf, sc = bundle["platform"], bundle["scenario"]
+    best = {}
+    for c in cands:
+        if c.get("device_fold"):
+            k = c["protein"]
+            if k not in best or c["device_fold"] > best[k]:
+                best[k] = c["device_fold"]
+    out = []
+    for s in bundle["sensors"]:
+        if s.module_type != "A" or not s.efficiency:
+            continue
+        out.append(dict(
+            biomarker=s.biomarker, protein=s.protein_name,
+            organism=s.organism, doi=s.source_doi,
+            km_uM=_f(s.km_uM), kcat_s=_f(s.kcat_s),
+            efficiency=_f(s.efficiency, 5),
+            min_enzyme_uM=_f(enzymes.min_enzyme_uM(s, pf, sc["T_read"]), 8),
+            device_fold=_f(best.get(s.protein_name), 4),
+        ))
+    out.sort(key=lambda r: -r["efficiency"])
+    return out
+
+
 def positioning(bundle, res):
     """Where each module's constant sits against its analyte's clinical range.
 
@@ -235,18 +297,13 @@ def build(scenario="screen_default"):
             rho_max=_f(pf["panel_rho_correlated"]),
             panel_max_size=_f(pf["panel_max_size"]),
         ),
-        anchors=dict(
-            k_mem=_f(pf["k_mem"]), P_endo=_f(pf["P_endo"]),
-            k_scav=_f(pf["k_scav"]), K_oxyr=_f(pf["K_oxyr"]),
-            resting_h2o2=_f(pf["P_endo"] / pf["k_scav"], 4),
-            gradient=_f(1.0 + pf["k_scav"] / pf["k_mem"], 2),
-            k_scav_knockout=_f(pf["k_scav_knockout"]),
-        ),
+        anchors=oxyr_anchors(pf),
         biomarkers=biomarkers, cancers=cancers,
         sensors=[export_sensor(s) for s in bundle["sensors"]],
         studies=[export_study(s) for s in res["stage1"]],
         candidates=cands,
         positioning=positioning(bundle, res),
+        enzyme_loading=enzyme_loading(bundle, cands),
         counts=counts,
         panels={k: [export_panel(p, pf) for p in v] for k, v in all_panels.items()},
         out_of_scope=tables.read("out_of_scope.csv"),

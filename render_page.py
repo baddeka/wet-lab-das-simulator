@@ -69,7 +69,7 @@ def num(x, nd=3, dash="—"):
     if a >= 100:
         return "%.0f" % x
     if a >= 10:
-        return "%.1f" % x
+        return "%.0f" % x if float(x).is_integer() else "%.1f" % x
     return ("%." + str(nd) + "g") % x
 
 
@@ -284,6 +284,249 @@ def light_key(counts):
            % (light, LIGHT_ICON[light], counts.get(light, 0), e(label))
            for light, label in order]
     return '<div class="lightkey">%s</div>' % "".join(key)
+
+
+def _logx(v, lo, hi, x0, w):
+    return x0 + w * (math.log10(v) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
+
+
+def mechanism_figure(a):
+    """Why knocking out the scavengers makes it worse.
+
+    The least intuitive result the model produces, and it was three sentences of
+    prose. Two panels: the peroxide pool with both its inputs, and the OxyR
+    curve with each strain's resting point on it. The knockout does not remove a
+    competitor, it removes a drain - and the reporter then starts the assay with
+    almost no headroom left.
+    """
+    W, H = 780, 268
+    out = ['<svg class="mech" viewBox="0 0 %d %d" role="img" aria-label="The '
+           'cytoplasmic peroxide pool has two inputs and one drain; removing '
+           'the drain raises the resting level from %s to %s uM, above the OxyR '
+           'half-activation point of %s uM."'
+           '>' % (W, H, num(a["resting_h2o2"]), num(a["resting_knockout"]),
+                  num(a["K_oxyr"]))]
+
+    # ---- panel A: the pool ------------------------------------------------
+    out.append('<text class="panlab" x="0" y="12">The pool</text>')
+    px, py, pw, ph = 118, 74, 128, 74
+    out.append('<rect x="%d" y="%d" width="%d" height="%d" rx="10" '
+               'fill="none" stroke="var(--axis)" stroke-width="2"/>'
+               % (px, py, pw, ph))
+    out.append('<text class="poolt" x="%d" y="%d" text-anchor="middle">'
+               'cytoplasmic</text>' % (px + pw / 2, py + 30))
+    out.append('<text class="poolt" x="%d" y="%d" text-anchor="middle">'
+               'H₂O₂</text>' % (px + pw / 2, py + 50))
+
+    # the analyte's contribution: thin
+    out.append('<path d="M8 %d H%d" stroke="var(--series-a)" stroke-width="2" '
+               'fill="none"/>' % (py + 16, px - 8))
+    out.append('<path d="M%d %d l-7 -4 v8 z" fill="var(--series-a)"/>' % (px, py + 16))
+    out.append('<text class="flow" x="8" y="%d" fill="var(--series-a)">'
+               'from the biomarker</text>' % (py + 6))
+
+    # the cell's own: thick
+    out.append('<path d="M8 %d H%d" stroke="var(--ink-3)" stroke-width="9" '
+               'fill="none" opacity=".45"/>' % (py + 54, px - 10))
+    out.append('<path d="M%d %d l-10 -7 v14 z" fill="var(--ink-3)" opacity=".45"/>'
+               % (px, py + 54))
+    out.append('<text class="flow" x="8" y="%d">the cell’s own,</text>'
+               % (py + 74,))
+    out.append('<text class="flow" x="8" y="%d">P_endo %s µM/s</text>'
+               % (py + 88, num(a["P_endo"])))
+
+    # the drain
+    out.append('<path d="M%d %d V%d" stroke="var(--ink-3)" stroke-width="6" '
+               'opacity=".45" fill="none"/>' % (px + pw / 2, py + ph, py + ph + 26))
+    out.append('<path d="M%d %d l-7 -10 h14 z" fill="var(--ink-3)" opacity=".45"/>'
+               % (px + pw / 2, py + ph + 32))
+    out.append('<text class="flow" x="%d" y="%d" text-anchor="middle">'
+               'scavengers, k_scav %s s⁻¹</text>'
+               % (px + pw / 2, py + ph + 50, num(a["k_scav"])))
+    out.append('<text class="flow" x="%d" y="%d">→ OxyR</text>'
+               % (px + pw + 12, py + ph / 2 + 4))
+
+    # ---- panel B: the OxyR curve -----------------------------------------
+    bx, by, bw, bh = 380, 40, 356, 150
+    lo, hi = 0.002, 60.0
+    out.append('<text class="panlab" x="%d" y="12">What OxyR does with it</text>' % bx)
+    for frac, lab in ((0.0, "off"), (0.5, "half"), (1.0, "full")):
+        y = by + bh - bh * frac
+        out.append('<line class="grid" x1="%d" y1="%.1f" x2="%d" y2="%.1f"/>'
+                   % (bx, y, bx + bw, y))
+        out.append('<text class="tick" x="%d" y="%.1f" text-anchor="end">%s</text>'
+                   % (bx - 8, y + 4, lab))
+
+    d = int(math.floor(math.log10(lo)))
+    while 10 ** d <= hi:
+        gx = _logx(10 ** d, lo, hi, bx, bw)
+        if bx <= gx <= bx + bw:
+            out.append('<text class="tick" x="%.1f" y="%d" text-anchor="middle">'
+                       '%s</text>' % (gx, by + bh + 18,
+                                      "1" if d == 0 else "10<tspan dy='-4' "
+                                      "font-size='8'>%d</tspan>" % d))
+        d += 1
+    out.append('<text class="axis-title" x="%.1f" y="%d" text-anchor="middle">'
+               'resting cytoplasmic H₂O₂, µM</text>'
+               % (bx + bw / 2, by + bh + 38))
+
+    k, n = a["K_oxyr"], a["n_hill"] or 1.0
+    pts = []
+    for i in range(121):
+        v = lo * (hi / lo) ** (i / 120.0)
+        f = v ** n / (k ** n + v ** n)
+        pts.append("%.1f,%.1f" % (_logx(v, lo, hi, bx, bw), by + bh - bh * f))
+    out.append('<polyline class="curve" points="%s"/>' % " ".join(pts))
+
+    kx = _logx(k, lo, hi, bx, bw)
+    out.append('<line x1="%.1f" y1="%d" x2="%.1f" y2="%d" stroke="var(--axis)" '
+               'stroke-dasharray="3 3"/>' % (kx, by, kx, by + bh))
+    out.append('<text class="tick" x="%.1f" y="%d" text-anchor="middle">K_oxyr</text>'
+               % (kx, by - 6))
+
+    for key, act, col, lab in (
+            ("resting_h2o2", "activation_wt", "var(--good)", "wild type"),
+            ("resting_knockout", "activation_knockout", "var(--critical)", "Hpx⁻")):
+        vx = _logx(a[key], lo, hi, bx, bw)
+        vy = by + bh - bh * a[act]
+        out.append('<circle cx="%.1f" cy="%.1f" r="5.5" fill="%s" '
+                   'stroke="var(--surface-1)" stroke-width="2"><title>%s: resting '
+                   '%s uM, OxyR %s activated</title></circle>'
+                   % (vx, vy, col, lab, num(a[key]), pct(a[act])))
+        anchor = "start" if a[key] < k else "end"
+        dx = 10 if anchor == "start" else -10
+        out.append('<text class="ptlab" x="%.1f" y="%.1f" text-anchor="%s" '
+                   'fill="%s">%s</text>' % (vx + dx, vy + 4, anchor, col, e(lab)))
+        out.append('<text class="ptsub" x="%.1f" y="%.1f" text-anchor="%s">'
+                   '%s activated, %s headroom</text>'
+                   % (vx + dx, vy + 19, anchor, pct(a[act]),
+                      pct(a["headroom_wt" if key == "resting_h2o2"
+                            else "headroom_knockout"])))
+    out.append("</svg>")
+    return ('<figure class="mechfig"><div class="figscroll">%s</div>'
+            '<figcaption>Deleting the catalases and peroxidases does not remove '
+            'a competitor for the signal — it removes the drain. Resting '
+            'peroxide climbs from %s to %s µM, past the OxyR half-activation '
+            'point, and the reporter begins the assay already %s switched on '
+            'with %s of its range left. That is why the knockout makes the fold '
+            'worse rather than better.</figcaption></figure>'
+            % ("".join(out), num(a["resting_h2o2"]), num(a["resting_knockout"]),
+               pct(a["activation_knockout"]), pct(a["headroom_knockout"])))
+
+
+def enzyme_charts(d, biomarker):
+    """Efficiency against what it buys, on one shared x axis.
+
+    The section's conclusion - that two orders of catalytic efficiency buy
+    enzyme loading and not signal - used to sit in a sentence under a table.
+    Two panels over the same log axis make the argument directly: the fold is
+    flat across the whole range, the loading falls as 1/x down it.
+
+    The left panel is restricted to one biomarker, because comparing folds
+    across analytes would compare clinical ranges rather than enzymes. The
+    right panel takes every type A enzyme in the library, since the minimum
+    loading depends only on kcat/Km and the read time.
+    """
+    rows = d.get("enzyme_loading") or []
+    same = [r for r in rows if r["biomarker"] == biomarker and r["device_fold"]]
+    loads = [r for r in rows if r["min_enzyme_uM"]]
+    if len(same) < 2 or len(loads) < 2:
+        return ""
+
+    W, H = 780, 272
+    pw, ph, top = 320, 150, 42
+    ax, bx = 54, 440
+    effs = [r["efficiency"] for r in rows]
+    lo = 10 ** math.floor(math.log10(min(effs)))
+    hi = 10 ** math.ceil(math.log10(max(effs)))
+
+    out = ['<svg class="enzfig" viewBox="0 0 %d %d" role="img" aria-label="'
+           'Catalytic efficiency against the fold it delivers and the enzyme '
+           'loading it requires">' % (W, H)]
+
+    def xaxis(x0, label):
+        dd = int(math.log10(lo))
+        while 10 ** dd <= hi:
+            gx = _logx(10 ** dd, lo, hi, x0, pw)
+            out.append('<line class="grid" x1="%.1f" y1="%d" x2="%.1f" y2="%d"/>'
+                       % (gx, top, gx, top + ph))
+            out.append('<text class="tick" x="%.1f" y="%d" text-anchor="middle">'
+                       '10<tspan dy="-4" font-size="8">%d</tspan></text>'
+                       % (gx, top + ph + 17, dd))
+            dd += 1
+        out.append('<text class="axis-title" x="%.1f" y="%d" text-anchor="middle">'
+                   '%s</text>' % (x0 + pw / 2, top + ph + 38, label))
+
+    # ---- left: the fold, within one biomarker ----------------------------
+    out.append('<text class="panlab" x="%d" y="14">What it buys in signal</text>' % ax)
+    folds = [r["device_fold"] for r in same]
+    fmin, fmax = min(folds), max(folds)
+    pad = max((fmax - fmin) * 0.6, 0.04)
+    ylo, yhi = fmin - pad, fmax + pad
+    for frac in (0.0, 0.5, 1.0):
+        v = ylo + (yhi - ylo) * frac
+        y = top + ph - ph * frac
+        out.append('<line class="grid" x1="%d" y1="%.1f" x2="%d" y2="%.1f"/>'
+                   % (ax, y, ax + pw, y))
+        out.append('<text class="tick" x="%d" y="%.1f" text-anchor="end">%s×'
+                   '</text>' % (ax - 8, y + 4, num(v, 3)))
+    xaxis(ax, "catalytic efficiency, kcat/Km")
+    pts = sorted(same, key=lambda r: r["efficiency"])
+    ytop = top + ph - ph * (fmax - ylo) / (yhi - ylo)
+    ybot = top + ph - ph * (fmin - ylo) / (yhi - ylo)
+    out.append('<rect class="band" x="%d" y="%.1f" width="%d" height="%.1f"/>'
+               % (ax, ytop, pw, max(ybot - ytop, 1.5)))
+    for r in pts:
+        px_ = _logx(r["efficiency"], lo, hi, ax, pw)
+        py_ = top + ph - ph * (r["device_fold"] - ylo) / (yhi - ylo)
+        out.append('<circle cx="%.1f" cy="%.1f" r="5" fill="var(--series-a)" '
+                   'stroke="var(--surface-1)" stroke-width="2"><title>%s: '
+                   'kcat/Km %s, fold %s</title></circle>'
+                   % (px_, py_, e(r["protein"]), num(r["efficiency"], 3),
+                      num(r["device_fold"], 4)))
+    spread_x = max(r["efficiency"] for r in same) / min(r["efficiency"] for r in same)
+    out.append('<text class="note" x="%d" y="%d">%s× range in efficiency, '
+               '%s× in fold</text>'
+               % (ax, top + ph + 58, num(spread_x, 3), num(fmax / fmin, 3)))
+
+    # ---- right: the loading, across the whole library --------------------
+    out.append('<text class="panlab" x="%d" y="14">What it saves in enzyme</text>' % bx)
+    mins = [r["min_enzyme_uM"] for r in loads]
+    mlo = 10 ** math.floor(math.log10(min(mins)))
+    mhi = 10 ** math.ceil(math.log10(max(mins)))
+    dd = int(math.log10(mlo))
+    while 10 ** dd <= mhi:
+        y = top + ph - ph * (math.log10(10 ** dd) - math.log10(mlo)) / \
+            (math.log10(mhi) - math.log10(mlo))
+        out.append('<line class="grid" x1="%d" y1="%.1f" x2="%d" y2="%.1f"/>'
+                   % (bx, y, bx + pw, y))
+        out.append('<text class="tick" x="%d" y="%.1f" text-anchor="end">'
+                   '10<tspan dy="-4" font-size="8">%d</tspan></text>'
+                   % (bx - 8, y + 4, dd))
+        dd += 1
+    xaxis(bx, "catalytic efficiency, kcat/Km")
+    for r in sorted(loads, key=lambda r: r["efficiency"]):
+        px_ = _logx(r["efficiency"], lo, hi, bx, pw)
+        py_ = top + ph - ph * (math.log10(r["min_enzyme_uM"]) - math.log10(mlo)) / \
+            (math.log10(mhi) - math.log10(mlo))
+        out.append('<circle cx="%.1f" cy="%.1f" r="5" fill="var(--series-b)" '
+                   'stroke="var(--surface-1)" stroke-width="2"><title>%s: '
+                   'kcat/Km %s, needs %s uM enzyme</title></circle>'
+                   % (px_, py_, e(r["protein"]), num(r["efficiency"], 3),
+                      num(r["min_enzyme_uM"], 3)))
+    out.append('<text class="note" x="%d" y="%d">minimum enzyme, µM '
+               '(falls as 1/efficiency)</text>' % (bx, top + ph + 58))
+    out.append("</svg>")
+
+    return ('<figure class="enzfigwrap"><div class="figscroll">%s</div>'
+            '<figcaption>Left: the four enzymes published for %s, on the fold '
+            'each delivers. Right: every type A enzyme in the library, on the '
+            'loading each needs to turn over %s%% of its analyte inside the '
+            'read. The axis is the same. A better enzyme costs less enzyme; it '
+            'does not produce more signal, because the ceiling is set by the '
+            'cell’s own peroxide flux and no enzyme moves that.</figcaption>'
+            '</figure>' % ("".join(out), e(biomarker),
+                           "95"))
 
 
 def positioning_legend(rows):

@@ -2,11 +2,17 @@
  "anchors": {
   "K_oxyr": 0.1,
   "P_endo": 14.0,
+  "activation_knockout": 0.9655,
+  "activation_wt": 0.1667,
   "gradient": 8.78,
+  "headroom_knockout": 0.0345,
+  "headroom_wt": 0.8333,
   "k_mem": 90.0,
   "k_scav": 700.0,
   "k_scav_knockout": 5.0,
-  "resting_h2o2": 0.02
+  "n_hill": 1.0,
+  "resting_h2o2": 0.02,
+  "resting_knockout": 2.8
  },
  "biomarkers": [
   "Choline",
@@ -1895,6 +1901,96 @@
   "red": 45,
   "yellow": 5
  },
+ "enzyme_loading": [
+  {
+   "biomarker": "DiAcSpm",
+   "device_fold": 1.2877,
+   "doi": "10.1515/hsz-2025-0158",
+   "efficiency": 72.22222,
+   "kcat_s": 260.0,
+   "km_uM": 3.6,
+   "min_enzyme_uM": 2.304e-05,
+   "organism": "Ogataea parapolymorpha",
+   "protein": "OpaPAO1"
+  },
+  {
+   "biomarker": "Putrescine",
+   "device_fold": 1.6314,
+   "doi": "10.1007/s00253-007-1310-4",
+   "efficiency": 3.17073,
+   "kcat_s": 26.0,
+   "km_uM": 8.2,
+   "min_enzyme_uM": 0.00052489,
+   "organism": "Rhodococcus erythropolis NCIMB 11540",
+   "protein": "PuORh"
+  },
+  {
+   "biomarker": "DiAcSpm",
+   "device_fold": 1.3554,
+   "doi": "10.1016/j.bbapap.2007.08.010",
+   "efficiency": 1.90361,
+   "kcat_s": 158.0,
+   "km_uM": 83.0,
+   "min_enzyme_uM": 0.00087428,
+   "organism": "Debaryomyces hansenii",
+   "protein": "DhaPAO (alt buffer)"
+  },
+  {
+   "biomarker": "DiAcSpm",
+   "device_fold": 1.3577,
+   "doi": "10.1515/hsz-2025-0158",
+   "efficiency": 1.6338,
+   "kcat_s": 11.6,
+   "km_uM": 7.1,
+   "min_enzyme_uM": 0.00101866,
+   "organism": "Ogataea parapolymorpha",
+   "protein": "OpaPAO3"
+  },
+  {
+   "biomarker": "DiAcSpm",
+   "device_fold": 1.3637,
+   "doi": "10.1016/j.bbapap.2007.08.010",
+   "efficiency": 0.50968,
+   "kcat_s": 158.0,
+   "km_uM": 310.0,
+   "min_enzyme_uM": 0.00326539,
+   "organism": "Debaryomyces hansenii",
+   "protein": "DhaPAO"
+  },
+  {
+   "biomarker": "Lactate",
+   "device_fold": null,
+   "doi": "10.1038/srep27892",
+   "efficiency": 0.176,
+   "kcat_s": 88.0,
+   "km_uM": 500.0,
+   "min_enzyme_uM": 0.00945623,
+   "organism": "Aerococcus viridans",
+   "protein": "avLOX"
+  },
+  {
+   "biomarker": "Choline",
+   "device_fold": null,
+   "doi": "10.1021/bi035435o",
+   "efficiency": 0.03588,
+   "kcat_s": 61.0,
+   "km_uM": 1700.0,
+   "min_enzyme_uM": 0.04638201,
+   "organism": "Arthrobacter globiformis",
+   "protein": "Choline oxidase"
+  },
+  {
+   "biomarker": "Sarcosine",
+   "device_fold": null,
+   "doi": "10.1002/2211-5463.70119",
+   "efficiency": 0.00147,
+   "kcat_s": 25.0,
+   "km_uM": 17000.0,
+   "min_enzyme_uM": 1.13172108,
+   "organism": "Bacillus sp.",
+   "protein": "SoxB"
+  }
+ ],
  "gaps": {
   "missing_constants": [
    {

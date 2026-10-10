@@ -121,6 +121,23 @@ svg.chart,svg.arch{width:100%;height:auto;display:block}
 .swipe{display:none;color:var(--ink-3);font-size:12.5px;margin:10px 0 0}
 @media (max-width:700px){.swipe{display:block}}
 
+/* the two explanatory figures */
+svg.mech,svg.enzfig{width:100%;height:auto;display:block}
+.figscroll svg.mech{min-width:720px}
+.figscroll svg.enzfig{min-width:740px}
+.mechfig,.enzfigwrap{margin:28px 0 0;padding:0}
+.mechfig figcaption,.enzfigwrap figcaption{margin-top:16px;color:var(--ink-3);
+    font-size:13.5px;line-height:1.6;max-width:70ch}
+.panlab{fill:var(--ink-3);font-size:11px;letter-spacing:.11em;
+        text-transform:uppercase;font-family:var(--sans)}
+.poolt{fill:var(--ink-1);font-size:14px;font-weight:600;font-family:var(--sans)}
+.flow{fill:var(--ink-3);font-size:11.5px;font-family:var(--sans)}
+.curve{fill:none;stroke:var(--ink-2);stroke-width:2}
+.band{fill:var(--series-a);opacity:.13}
+.ptlab{font-size:12.5px;font-weight:600;font-family:var(--sans)}
+.ptsub{fill:var(--ink-3);font-size:11px;font-family:var(--sans)}
+.note{fill:var(--ink-3);font-size:11.5px;font-family:var(--sans)}
+
 table{border-collapse:collapse;width:100%;font-size:13.5px}
 th{text-align:left;font-weight:500;color:var(--ink-3);font-size:11px;
    letter-spacing:.09em;text-transform:uppercase;padding:0 12px 10px;
