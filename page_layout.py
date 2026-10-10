@@ -5,10 +5,10 @@ Split from render_page.py only for file size; the two belong together. All the
 prose that frames the numbers lives here, next to the numbers it frames, so a
 figure and the sentence around it cannot drift apart.
 """
-from render_page import (CSS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
+from render_page import (CSS, FONTS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
                          enzymes_section, gaps_section, library_table, num,
                          panels_section, pct, positioning_chart,
-                         positioning_legend, references, stat_tiles)
+                         positioning_legend, rail, references, stat_tiles)
 
 HEAD = """<!DOCTYPE html>
 <html lang="en">
@@ -19,13 +19,18 @@ HEAD = """<!DOCTYPE html>
 <meta name="description" content="A fixed plasmid skeleton, interchangeable recognition modules, and a model that decides which module is worth building. Screens a library of biomarkers against published clinical distributions and measured enzyme kinetics.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129516;</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="%s">
 <style>:root{%s}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){%s}}
 :root[data-theme="dark"]{%s}
 %s</style>
 </head>
 <body>
-<div class="wrap">
+<div class="shell">
+%s
+<main class="col">
 """
 
 
@@ -62,7 +67,7 @@ def page(d):
                      % (e(best["biomarker"]), e(best["protein"]),
                         num(best["auc_device"], 3)))
 
-    out = [HEAD % (PALETTE, PALETTE_DARK, PALETTE_DARK, CSS)]
+    out = [HEAD % (FONTS, PALETTE, PALETTE_DARK, PALETTE_DARK, CSS, rail())]
 
     out.append(
         "<header>\n<h1>A platform for biomarker detection,<br>not a sensor for "

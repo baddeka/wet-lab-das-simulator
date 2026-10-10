@@ -15,6 +15,9 @@ import html
 import math
 
 PALETTE = """
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --surface-1: #fcfcfb;
   --plane: #f9f9f7;
   --ink-1: #0b0b0b;
@@ -174,6 +177,46 @@ def positioning_chart(rows):
             % (svg, "".join(tab)))
 
 
+SECTIONS = [("architecture", "Architecture"),
+            ("positioning", "Why most fail"),
+            ("library", "The screen"),
+            ("panels", "Panels"),
+            ("enzymes", "Swapping enzymes"),
+            ("model", "The model"),
+            ("gaps", "Honest limits"),
+            ("references", "References")]
+
+
+def rail():
+    """Sticky contents. A 15000px page without one is not a design, it is a dump."""
+    out = ['<nav class="rail" aria-label="Contents"><p class="railhead">Contents</p><ol>']
+    for sid, label in SECTIONS:
+        out.append('<li><a href="#%s" data-sec="%s">%s</a></li>' % (sid, sid, e(label)))
+    out.append("</ol></nav>")
+    return "".join(out)
+
+
+def light_bar(counts, total):
+    """The verdict split, to scale, before the table that details it.
+
+    45 of 52 pairs fail. That is the headline finding of the screen and it was
+    previously buried in the subtitle of a stat tile.
+    """
+    order = [("green", "pass outright"), ("yellow", "pass with concentration"),
+             ("red", "fail")]
+    bar, key = [], []
+    for light, label in order:
+        n = counts.get(light, 0)
+        if n:
+            bar.append('<span class="%s" style="flex:%d" title="%d %s"></span>'
+                       % (light, n, n, label))
+        key.append('<span><i>%d</i> %s</span>' % (n, e(label)))
+    return ('<div class="lightbar" role="img" aria-label="%d pass, %d with '
+            'concentration, %d fail">%s</div><div class="lightkey">%s</div>'
+            % (counts.get("green", 0), counts.get("yellow", 0),
+               counts.get("red", 0), "".join(bar), "".join(key)))
+
+
 def positioning_legend(rows):
     """Describe only the module types the chart actually draws.
 
@@ -223,11 +266,21 @@ def stat_tiles(d):
 
 
 def library_table(d):
+    """The full matrix, with the rejections folded away by default.
+
+    All 52 rows used to be open, and the table alone was about three quarters of
+    the page - ten thousand pixels of mostly-identical rejections between the
+    chart and the panels. The rejections stay (they are the result), but the
+    seven rows that pass lead, and the rest sit one click away. With JavaScript
+    off every row is visible, because the fold is applied by script.
+    """
     rows = sorted(d["candidates"],
                   key=lambda c: ({"green": 0, "yellow": 1, "red": 2}[c["light"]],
                                  -(c.get("auc_device") or 0),
                                  c["biomarker"], c["protein"]))
-    out = ['<div class="filters" data-js-only>',
+    out = [light_bar(d["counts"], len(rows))]
+    out.append('<div class="filters" data-js-only>')
+    out += [
            '<label>Show <select id="f-light">'
            '<option value="">every verdict</option>'
            '<option value="green">passes only</option>'
@@ -237,7 +290,7 @@ def library_table(d):
            + "".join('<option>%s</option>' % e(b) for b in d["biomarkers"])
            + '</select></label>',
            '<span class="count" id="f-count"></span></div>']
-    out.append('<div class="scroll"><table class="lib"><thead><tr>'
+    out.append('<div class="figscroll"><table class="lib"><thead><tr>'
                '<th>verdict</th><th>biomarker</th><th>module</th><th>type</th>'
                '<th>cancer / fluid</th><th class="n">clinical</th>'
                '<th class="n">device</th><th class="n">conc.</th>'
@@ -261,6 +314,9 @@ def library_table(d):
                num(c.get("auc_device"), 3), pct(c.get("sensitivity")),
                e(c["reason"])))
     out.append("</tbody></table></div>")
+    n_pass = sum(1 for c in rows if c["light"] != "red")
+    out.append('<button class="more" id="f-more" data-js-only aria-expanded="false">Show the %d rejected pairs</button>'
+               % (len(rows) - n_pass))
     return "\n".join(out)
 
 
@@ -422,117 +478,54 @@ SKELETON_SVG = """
 """
 
 
-CSS = """
-*{box-sizing:border-box}
-html{color-scheme:light dark}
-body{margin:0;background:var(--plane);color:var(--ink-1);
-     font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
-     -webkit-text-size-adjust:100%}
-.wrap{max-width:980px;margin:0 auto;padding:0 20px 96px}
-header{padding:72px 0 40px}
-h1{font-size:clamp(30px,5vw,44px);line-height:1.1;margin:0 0 14px;letter-spacing:-.02em}
-.lede{font-size:clamp(17px,2.4vw,20px);color:var(--ink-2);margin:0 0 10px;max-width:70ch}
-.sub{color:var(--ink-3);font-size:14px;margin:18px 0 0}
-section{margin:52px 0 0;scroll-margin-top:16px}
-h2{font-size:13px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
-   margin:0 0 6px;font-weight:600}
-.h2sub{font-size:clamp(20px,3vw,26px);margin:0 0 16px;letter-spacing:-.01em;line-height:1.25}
-h3{font-size:15px;margin:26px 0 8px}
-p{max-width:72ch}
-.aside{color:var(--ink-2);font-size:14px}
-.empty{color:var(--ink-3);font-style:italic}
-.card{background:var(--surface-1);border:1px solid var(--ring);border-radius:14px;
-      padding:18px 20px;margin:14px 0}
-
-.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:22px 0}
-.tile{background:var(--surface-1);border:1px solid var(--ring);border-radius:14px;padding:16px 18px}
-.tile-v{font-size:30px;line-height:1.1;letter-spacing:-.02em}
-.tile-k{font-size:13px;color:var(--ink-2);margin-top:6px}
-.tile-s{font-size:12px;color:var(--ink-3);margin-top:3px}
-
-svg.chart,svg.arch{width:100%;height:auto;display:block}
-/* Below about 700px both figures shrink until their 11px labels are a few
-   pixels tall. They stop shrinking at a legible size and the card scrolls
-   sideways instead; the table under the chart carries the same numbers for
-   anyone who would rather not swipe. */
-.figscroll{overflow-x:auto;overscroll-behavior-x:contain}
-.figscroll svg.chart{min-width:660px}
-.figscroll svg.arch{min-width:600px}
-.figscroll::-webkit-scrollbar{height:8px}
-.figscroll::-webkit-scrollbar-thumb{background:var(--axis);border-radius:4px}
-table.posdata{margin-top:14px;min-width:560px}
-table.panels{min-width:620px}
-table.enz{min-width:600px}
-.swipe{display:none;color:var(--ink-3);font-size:12px;margin:6px 0 0}
-@media (max-width:700px){.swipe{display:block}}
-.grid{stroke:var(--grid);stroke-width:1}
-.tick,.axis-title,.rowsub,.rownote,.ps,.ms{fill:var(--ink-3);font-size:11px}
-.axis-title{font-size:12px}
-.rowlab,.pl,.mt{fill:var(--ink-1);font-size:13px;font-weight:600}
-.mb{fill:var(--ink-1);font-size:13px}
-.pl{font-size:14px}
-.range{opacity:.9}
-
-table{border-collapse:collapse;width:100%;font-size:13.5px}
-th{text-align:left;font-weight:600;color:var(--ink-3);font-size:11.5px;
-   letter-spacing:.05em;text-transform:uppercase;padding:0 10px 8px;
-   border-bottom:1px solid var(--axis);white-space:nowrap}
-th .u{text-transform:none;letter-spacing:0}
-td{padding:9px 10px;border-bottom:1px solid var(--grid);vertical-align:top}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-td.bm{font-weight:600;white-space:nowrap}
-td.ctx{color:var(--ink-2);font-size:12.5px}
-td.why{color:var(--ink-2);font-size:12.5px;min-width:22ch}
-.org{color:var(--ink-3);font-size:11.5px;font-style:italic}
-.scroll{overflow-x:auto;margin:0 -20px;padding:0 20px}
-tr.hid{display:none}
-
-.chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
-      font-size:12px;font-weight:600}
-.chip .dot{font-size:13px;line-height:1}
-.chip.green{color:var(--good)} .chip.yellow{color:#8a6100} .chip.red{color:var(--critical)}
-.tt{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;
-    font-size:11.5px;font-weight:700;color:#fff}
-.tt.A{background:var(--series-a)} .tt.B{background:var(--series-b)}
-tr.v-holds td.bm{color:var(--good)}
-tr.v-fails td.bm{color:var(--critical)}
-
-.filters{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:0 0 14px;
-         font-size:13px;color:var(--ink-2)}
-select{font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--axis);
-       background:var(--surface-1);color:var(--ink-1)}
-.count{color:var(--ink-3);font-size:12.5px}
-[data-js-only]{display:none}
-
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}
-ul.gap{padding-left:18px;margin:8px 0;font-size:13.5px;color:var(--ink-2)}
-ul.gap li{margin:7px 0}
-ol.refs{padding-left:22px;font-size:13px;color:var(--ink-2)}
-ol.refs li{margin:9px 0}
-ol.refs a{color:var(--series-a);text-decoration:none;font-variant-numeric:tabular-nums}
-ol.refs a:hover{text-decoration:underline}
-.use{display:block;color:var(--ink-3);font-size:12px;margin-top:2px}
-footer{margin:72px 0 0;padding-top:22px;border-top:1px solid var(--grid);
-       color:var(--ink-3);font-size:12.5px}
-footer a{color:var(--series-a)}
-@media (max-width:720px){.cols{grid-template-columns:1fr}header{padding:44px 0 28px}}
-"""
+from page_css import CSS, FONTS  # noqa: E402  (stylesheet lives next door)
 
 JS = """
 (function(){
-  document.querySelectorAll('[data-js-only]').forEach(function(n){n.style.display='flex'});
-  var L=document.getElementById('f-light'), B=document.getElementById('f-bm'),
-      C=document.getElementById('f-count'),
-      rows=[].slice.call(document.querySelectorAll('table.lib tbody tr'));
-  if(!L||!B) return;
+  document.querySelectorAll('[data-js-only]').forEach(function(n){
+    n.style.display = n.tagName === 'BUTTON' ? 'inline-block' : 'flex';
+  });
+
+  var rows = [].slice.call(document.querySelectorAll('table.lib tbody tr')),
+      L = document.getElementById('f-light'), B = document.getElementById('f-bm'),
+      C = document.getElementById('f-count'), M = document.getElementById('f-more'),
+      open = false;
+
   function apply(){
-    var l=L.value, b=B.value, n=0;
+    var l = L ? L.value : '', b = B ? B.value : '', n = 0, hidden = 0;
     rows.forEach(function(r){
-      var ok=(!l||r.dataset.light===l)&&(!b||r.dataset.bm===b);
-      r.classList.toggle('hid',!ok); if(ok)n++;
+      var match = (!l || r.dataset.light === l) && (!b || r.dataset.bm === b);
+      // the fold only applies when no filter is asking for the rejections
+      var folded = !open && !l && r.dataset.light === 'red';
+      if (match && folded) hidden++;
+      r.classList.toggle('hid', !match || folded);
+      if (match && !folded) n++;
     });
-    C.textContent=n+' of '+rows.length+' shown';
+    if (C) C.textContent = n + ' shown';
+    if (M) {
+      M.hidden = hidden === 0 && !open;
+      M.textContent = open ? 'Hide the rejected pairs'
+                           : 'Show the ' + hidden + ' rejected pairs';
+      M.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
   }
-  L.addEventListener('change',apply); B.addEventListener('change',apply); apply();
+  if (L) L.addEventListener('change', function(){ open = !!L.value; apply(); });
+  if (B) B.addEventListener('change', apply);
+  if (M) M.addEventListener('click', function(){ open = !open; apply(); });
+  apply();
+
+  // mark the section the reader is in
+  var links = [].slice.call(document.querySelectorAll('.rail a')),
+      secs = links.map(function(a){ return document.getElementById(a.dataset.sec); });
+  function spy(){
+    var y = window.scrollY + 120, cur = 0;
+    secs.forEach(function(s, i){ if (s && s.offsetTop <= y) cur = i; });
+    links.forEach(function(a, i){ a.classList.toggle('on', i === cur); });
+  }
+  if (links.length) {
+    addEventListener('scroll', spy, {passive:true});
+    addEventListener('resize', spy);
+    spy();
+  }
 })();
 """
