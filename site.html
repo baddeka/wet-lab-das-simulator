@@ -224,7 +224,7 @@ footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
 </div>
 
 <footer>
-  <p><b>Model.</b> Cytoplasm and medium are treated as separate compartments exchanging H<sub>2</sub>O<sub>2</sub> at <code>k_mem &asymp; 90 s&#8315;&#185;</code>. The cytoplasm is quasi-steady on a millisecond timescale; the medium is integrated explicitly because at low cell density it equilibrates over minutes. Anchors: endogenous production <code>P_endo &asymp; 14 &micro;M/s</code> and resting cytoplasmic <code>0.02 &micro;M</code> (Seaver &amp; Imlay 2001, which together force <code>k_scav &asymp; 700 s&#8315;&#185;</code>); OxyR half-activation at <code>0.1 &micro;M</code> cytoplasmic H<sub>2</sub>O<sub>2</sub> (Aslund 1999; Imlay reviews); oxidase <code>kcat 158 s&#8315;&#185;</code>, <code>Km 83 &micro;M</code> (Bakke 2007). The model reproduces the independently measured nine-fold medium-to-cytoplasm gradient without fitting.</p>
+  <p><b>Model.</b> Cytoplasm and medium are treated as separate compartments exchanging H<sub>2</sub>O<sub>2</sub> at <code id="a-kmem"></code>. The cytoplasm is quasi-steady on a millisecond timescale; the medium is integrated explicitly because at low cell density it equilibrates over minutes. Anchors: endogenous production <code id="a-pendo"></code> and resting cytoplasmic <code id="a-rest"></code> (Seaver &amp; Imlay 2001, which together force <code id="a-kscav"></code>); OxyR half-activation at <code id="a-koxyr"></code> cytoplasmic H<sub>2</sub>O<sub>2</sub> (Aslund 1999; Imlay reviews); oxidase <code id="a-kcat"></code>, <code id="a-km"></code> (Bakke 2007). The model reproduces the independently measured medium-to-cytoplasm gradient of <code id="a-grad"></code> without fitting.</p>
   <p><b>Read it as a design tool, not a prediction.</b> Three quantities are unmeasured and any of them can close the branch: whether DAS crosses the inner membrane at all, how selective the oxidase is against the more abundant urinary acetylpolyamines, and whether creatinine can be measured in parallel.</p>
 </footer>
 
@@ -263,6 +263,16 @@ footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
   },
   "_generated_from": "data/platform.csv, data/scenarios.csv (web_default), data/sensors.csv, data/web_presets.csv",
   "activePreset": 2,
+  "anchors": {
+    "K_oxyr": 0.1,
+    "Km": 310.0,
+    "P_endo": 14.0,
+    "gradient": 8.777777777777779,
+    "k_mem": 90.0,
+    "k_scav": 700.0,
+    "kcat": 158.0,
+    "resting_h2o2": 0.02
+  },
   "labels": {
     "cr_high": 2.0,
     "cr_low": 0.5,
@@ -385,6 +395,23 @@ const LN2 = Math.log(2);
 const CFG = JSON.parse(document.getElementById("model-config").textContent);
 const P0  = CFG.P0;
 const V_HEALTHY = CFG.labels.v_healthy, V_CUTOFF = CFG.labels.v_cutoff;
+
+/* The prose anchors above the controls. Same source as the model, so the text
+   cannot drift away from what the page computes - which is how it ended up
+   telling readers Km was 83 uM while the model had moved to 310. */
+function fillAnchors(){
+  const a = CFG.anchors, set = (id, html) => {
+    const el = document.getElementById(id); if (el) el.innerHTML = html;
+  };
+  set("a-kmem",  "k_mem &asymp; " + a.k_mem + " s&#8315;&#185;");
+  set("a-pendo", "P_endo &asymp; " + a.P_endo + " &micro;M/s");
+  set("a-rest",  (+a.resting_h2o2.toFixed(4)) + " &micro;M");
+  set("a-kscav", "k_scav &asymp; " + a.k_scav + " s&#8315;&#185;");
+  set("a-koxyr", a.K_oxyr + " &micro;M");
+  set("a-kcat",  "kcat " + a.kcat + " s&#8315;&#185;");
+  set("a-km",    "Km " + a.Km + " &micro;M");
+  set("a-grad",  a.gradient.toFixed(1) + "&times;");
+}
 const CR_LOW = CFG.labels.cr_low, CR_HIGH = CFG.labels.cr_high;
 const phi   = p => p.phi_per_OD * p.OD;
 const netF  = p => p.conc_factor * p.sample_frac * (p.cr_norm ? 1/p.creatinine : 1);
@@ -875,8 +902,8 @@ function term(sym, val, res){
 }
 function op(t){ return '<span class="op">' + t + '</span>'; }
 
-build(); buildPresets();
-Object.assign(S, P0, PRESETS[2].p);
+build(); buildPresets(); fillAnchors();
+Object.assign(S, P0, PRESETS[activePreset].p);
 render();
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawDose(); drawTime(); });
 </script>

@@ -106,8 +106,25 @@ def build_config(scenario="web_default"):
                    if s.protein_name == sensor_name
                    and s.biomarker == sc.get("sensor_biomarker")), None)
     preset_list, default_index = presets()
+    # The prose at the top of the page restates the model's literature anchors.
+    # Those are the platform values, not the scenario's: the page starts on
+    # non-growing cells at P_endo 4, while the anchor quoted from Seaver & Imlay
+    # is the growing-culture figure of 14. Keeping them separate stops the text
+    # and the sliders from contradicting each other.
+    pf = data.load_platform()
+    anchors = {
+        "k_mem": pf["k_mem"],
+        "P_endo": pf["P_endo"],
+        "k_scav": pf["k_scav"],
+        "K_oxyr": pf["K_oxyr"],
+        "resting_h2o2": pf["P_endo"] / pf["k_scav"],
+        "kcat": sensor.kcat_s if sensor else None,
+        "Km": sensor.km_uM if sensor else None,
+        "gradient": 1.0 + pf["k_scav"] / pf["k_mem"],
+    }
     return {
         "P0": starting_state(scenario),
+        "anchors": anchors,
         "presets": preset_list,
         "activePreset": default_index,
         "labels": {

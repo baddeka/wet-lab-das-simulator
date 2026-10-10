@@ -81,6 +81,19 @@ def main():
     # Strip the injected config block before scanning: it is generated, and it
     # is the one place numbers are supposed to appear.
     scan = re.sub(r'<script id="model-config".*?</script>', "", source, flags=re.S)
+
+    # Prose counts too. The page told readers "Km 83 uM" in its opening
+    # paragraph long after the model had moved to 310, because the first version
+    # of this check only looked for the object-literal form "Km:83".
+    for key in ("k_mem", "P_endo", "k_scav", "K_oxyr", "kcat", "Km"):
+        prose = re.findall(
+            r"%s\s*(?:&asymp;|&#8776;|≈|=)?\s*(-?[0-9][0-9.]*)" % re.escape(key),
+            scan)
+        prose = [v for v in prose if float(v) != 0.0]
+        check("%s is not quoted in the prose" % key, not prose,
+              "the text still states %s; fill it from CFG.anchors instead"
+              % ", ".join(prose))
+
     for key in MODEL_KEYS:
         # Only object-literal key positions count, so a ternary such as
         # "p.cr_norm ? 1/p.creatinine : 1" is not mistaken for an assignment.
