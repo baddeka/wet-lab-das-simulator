@@ -150,7 +150,52 @@ def positioning_chart(rows):
                    % (W - R + 6, y + 4, e(note)))
 
     out.append("</svg>")
-    return "\n".join(out)
+    svg = "\n".join(out)
+
+    # The same numbers as a table. Two jobs: the accessibility fallback the
+    # chart needs, and the readable version on a phone, where the figure stops
+    # shrinking and scrolls sideways instead.
+    tab = ['<table class="posdata"><thead><tr><th>module</th><th>biomarker</th>'
+           '<th class="n">constant</th><th class="n">clinical range</th>'
+           '<th class="n">analyte / constant</th></tr></thead><tbody>']
+    for r in rows:
+        tab.append('<tr><td class="bm">%s</td><td>%s</td>'
+                   '<td class="n">%s = %s <span class="u">µM</span></td>'
+                   '<td class="n">%s – %s <span class="u">µM</span></td>'
+                   '<td class="n">%s</td></tr>'
+                   % (e(r["protein"]), e(r["biomarker"]), r["anchor_name"],
+                      num(r["anchor_uM"]), num(r["healthy_uM"]),
+                      num(r["sick_uM"]), num(r["ratio_to_anchor"], 2)))
+    tab.append("</tbody></table>")
+
+    return ('<div class="figscroll">%s</div>'
+            '<p class="swipe">Swipe the chart sideways, or read the same '
+            'numbers below.</p><div class="figscroll">%s</div>'
+            % (svg, "".join(tab)))
+
+
+def positioning_legend(rows):
+    """Describe only the module types the chart actually draws.
+
+    The first version of this legend named both types and both constants. No
+    type B row has ever been drawn - the only type B protein in the library with
+    a published Kd is BetI, and choline has no clinical distribution to plot it
+    against - so a reader was sent hunting for a colour that is not on the page.
+    The absence is itself the finding, so it gets said rather than papered over.
+    """
+    present = sorted({r["module_type"] for r in rows})
+    if present == ["A"]:
+        return ("Every constant plotted here is a K<sub>m</sub>: all of these are "
+                "type A modules. <b>No type B module appears at all</b> &mdash; "
+                "the only one in the library with a published K<sub>d</sub> is "
+                "BetI, and choline has no clinical distribution to plot it "
+                "against. That gap in the data, not the chemistry, is what "
+                "currently limits the second module type.")
+    if present == ["B"]:
+        return ("Every constant plotted here is a K<sub>d</sub>: all of these are "
+                "type B modules.")
+    return ("The type A constant is K<sub>m</sub>, the type B constant is "
+            "K<sub>d</sub>.")
 
 
 # --------------------------------------------------------------- sections
@@ -225,7 +270,7 @@ def panels_section(d):
     out = []
     for cancer, plist in sorted(d["panels"].items()):
         out.append('<h3>%s</h3>' % e(cancer))
-        out.append('<table class="panels"><thead><tr><th>panel</th>'
+        out.append('<div class="figscroll"><table class="panels"><thead><tr><th>panel</th>'
                    '<th class="n">AUC range</th><th class="n">sens=spec</th>'
                    '<th>verdict</th></tr></thead><tbody>')
         for p in plist:
@@ -254,7 +299,7 @@ def enzymes_section(d):
         items.sort(key=lambda s: -s["efficiency"])
         lo = items[-1]["efficiency"]
         out.append('<h3>%s</h3>' % e(bm))
-        out.append('<table class="enz"><thead><tr><th>enzyme</th><th>organism</th>'
+        out.append('<div class="figscroll"><table class="enz"><thead><tr><th>enzyme</th><th>organism</th>'
                    '<th class="n">kcat <span class="u">s⁻¹</span></th><th class="n">Km <span class="u">µM</span></th>'
                    '<th class="n">kcat/Km <span class="u">µM⁻¹s⁻¹</span></th>'
                    '<th class="n">relative</th></tr>'
@@ -266,7 +311,7 @@ def enzymes_section(d):
                        % (e(s["protein"]), e(s["organism"] or "—"),
                           num(s["kcat_s"]), num(s["km_uM"]),
                           num(s["efficiency"], 3), num(s["efficiency"] / lo, 3)))
-        out.append("</tbody></table>")
+        out.append("</tbody></table></div>")
         spread = items[0]["efficiency"] / lo
         folds = [c["device_fold"] for c in d["candidates"]
                  if c["biomarker"] == bm and c["device_fold"]]
@@ -330,6 +375,10 @@ def references(d):
     for doi in sorted(refs):
         uses = "; ".join(sorted(refs[doi]))
         href = doi if doi.startswith("http") else "https://doi.org/" + doi
+        # One DOI in the library contains angle brackets. They are not legal in
+        # a URI unencoded (RFC 3986), so encode them in the href while the link
+        # text keeps the DOI as published.
+        href = href.replace("<", "%3C").replace(">", "%3E")
         out.append('<li><a href="%s" rel="noreferrer">%s</a><span class="use">%s</span></li>'
                    % (e(href), e(doi), e(uses)))
     out.append("</ol>")
@@ -338,6 +387,7 @@ def references(d):
 
 # --------------------------------------------------------------- the skeleton
 SKELETON_SVG = """
+<div class="figscroll">
 <svg class="arch" viewBox="0 0 760 236" role="img"
      aria-label="A fixed plasmid skeleton with two insertion sites; a module of
                  either type sits between them and hands its signal to the
@@ -368,6 +418,7 @@ SKELETON_SVG = """
   <text class="mb" x="294" y="170">analyte → transcription factor → promoter → GFP</text>
   <text class="ms" x="294" y="189">no peroxide stage; needed because oxidases are scarce</text>
 </svg>
+</div>
 """
 
 
@@ -400,6 +451,20 @@ p{max-width:72ch}
 .tile-s{font-size:12px;color:var(--ink-3);margin-top:3px}
 
 svg.chart,svg.arch{width:100%;height:auto;display:block}
+/* Below about 700px both figures shrink until their 11px labels are a few
+   pixels tall. They stop shrinking at a legible size and the card scrolls
+   sideways instead; the table under the chart carries the same numbers for
+   anyone who would rather not swipe. */
+.figscroll{overflow-x:auto;overscroll-behavior-x:contain}
+.figscroll svg.chart{min-width:660px}
+.figscroll svg.arch{min-width:600px}
+.figscroll::-webkit-scrollbar{height:8px}
+.figscroll::-webkit-scrollbar-thumb{background:var(--axis);border-radius:4px}
+table.posdata{margin-top:14px;min-width:560px}
+table.panels{min-width:620px}
+table.enz{min-width:600px}
+.swipe{display:none;color:var(--ink-3);font-size:12px;margin:6px 0 0}
+@media (max-width:700px){.swipe{display:block}}
 .grid{stroke:var(--grid);stroke-width:1}
 .tick,.axis-title,.rowsub,.rownote,.ps,.ms{fill:var(--ink-3);font-size:11px}
 .axis-title{font-size:12px}

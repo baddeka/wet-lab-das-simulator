@@ -7,8 +7,8 @@ figure and the sentence around it cannot drift apart.
 """
 from render_page import (CSS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
                          enzymes_section, gaps_section, library_table, num,
-                         panels_section, pct, positioning_chart, references,
-                         stat_tiles)
+                         panels_section, pct, positioning_chart,
+                         positioning_legend, references, stat_tiles)
 
 HEAD = """<!DOCTYPE html>
 <html lang="en">
@@ -96,11 +96,12 @@ def page(d):
         "diamond is that constant, the bar is the published healthy-to-sick "
         "span, and the distance between them predicts the verdict better than "
         "anything else in the screen.</p>\n<div class='card'>%s</div>\n"
-        "<p class='aside'>The type A constant is K<sub>m</sub>, type B is "
-        "K<sub>d</sub>. Sitting far below it is survivable &mdash; the branch is "
-        "simply first order there &mdash; but it costs enzyme loading and "
-        "signal. Sitting far above means saturation, which no amount of sample "
-        "preparation recovers.</p>\n</section>" % positioning_chart(d["positioning"]))
+        "<p class='aside'>%s Sitting far below the constant is survivable "
+        "&mdash; the branch is simply first order there &mdash; but it costs "
+        "enzyme loading and signal. Sitting far above means saturation, which "
+        "no amount of sample preparation recovers.</p>\n</section>"
+        % (positioning_chart(d["positioning"]),
+           positioning_legend(d["positioning"])))
 
     out.append(
         "<section id='library'>\n<h2>The screen</h2>\n"

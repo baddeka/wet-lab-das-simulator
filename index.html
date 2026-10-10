@@ -81,6 +81,20 @@ p{max-width:72ch}
 .tile-s{font-size:12px;color:var(--ink-3);margin-top:3px}
 
 svg.chart,svg.arch{width:100%;height:auto;display:block}
+/* Below about 700px both figures shrink until their 11px labels are a few
+   pixels tall. They stop shrinking at a legible size and the card scrolls
+   sideways instead; the table under the chart carries the same numbers for
+   anyone who would rather not swipe. */
+.figscroll{overflow-x:auto;overscroll-behavior-x:contain}
+.figscroll svg.chart{min-width:660px}
+.figscroll svg.arch{min-width:600px}
+.figscroll::-webkit-scrollbar{height:8px}
+.figscroll::-webkit-scrollbar-thumb{background:var(--axis);border-radius:4px}
+table.posdata{margin-top:14px;min-width:560px}
+table.panels{min-width:620px}
+table.enz{min-width:600px}
+.swipe{display:none;color:var(--ink-3);font-size:12px;margin:6px 0 0}
+@media (max-width:700px){.swipe{display:block}}
 .grid{stroke:var(--grid);stroke-width:1}
 .tick,.axis-title,.rowsub,.rownote,.ps,.ms{fill:var(--ink-3);font-size:11px}
 .axis-title{font-size:12px}
@@ -150,6 +164,7 @@ footer a{color:var(--series-a)}
 <h2>Architecture</h2>
 <p class='h2sub'>Two module types, because one is not enough</p>
 <div class='card'>
+<div class="figscroll">
 <svg class="arch" viewBox="0 0 760 236" role="img"
      aria-label="A fixed plasmid skeleton with two insertion sites; a module of
                  either type sits between them and hands its signal to the
@@ -181,12 +196,13 @@ footer a{color:var(--series-a)}
   <text class="ms" x="294" y="189">no peroxide stage; needed because oxidases are scarce</text>
 </svg>
 </div>
+</div>
 <p class='aside'>Type A exists for only a handful of analytes, because oxidases are scarce. Type B is what the platform falls back on where no oxidase is published, and having both is what makes this an architecture rather than one device. A sensor that carries its own fluorophore is a third thing, and is left out on purpose: it would replace the skeleton instead of plugging into it.</p>
 </section><section id='positioning'>
 <h2>Why most candidates fail</h2>
 <p class='h2sub'>Where each module&rsquo;s constant falls against its analyte</p>
 <p>A module reads a patient difference best when its Michaelis or dissociation constant sits inside the clinical range. The diamond is that constant, the bar is the published healthy-to-sick span, and the distance between them predicts the verdict better than anything else in the screen.</p>
-<div class='card'><svg class="chart" viewBox="0 0 820 280" role="img" aria-label="Module constant against clinical range, logarithmic axis">
+<div class='card'><div class="figscroll"><svg class="chart" viewBox="0 0 820 280" role="img" aria-label="Module constant against clinical range, logarithmic axis">
 <line class="grid" x1="196.0" y1="22" x2="196.0" y2="244"/>
 <text class="tick" x="196.0" y="258" text-anchor="middle">10<tspan dy='-5' font-size='9'>-2</tspan></text>
 <line class="grid" x1="269.1" y1="22" x2="269.1" y2="244"/>
@@ -234,8 +250,8 @@ footer a{color:var(--series-a)}
 <rect class="range" x="259.7" y="217.5" width="26.2" height="7" rx="3.5" fill="var(--series-a)"><title>DiAcSpm: clinical 0.0744 to 0.17 µM</title></rect>
 <g class="anchor" transform="translate(524.5,221.0)"><path d="M0,-7 L7,0 L0,7 L-7,0 Z" fill="var(--surface-1)" stroke="var(--series-a)" stroke-width="2"/><title>Km = 310 µM</title></g>
 <text class="rownote" x="714" y="225.0">1818× below</text>
-</svg></div>
-<p class='aside'>The type A constant is K<sub>m</sub>, type B is K<sub>d</sub>. Sitting far below it is survivable &mdash; the branch is simply first order there &mdash; but it costs enzyme loading and signal. Sitting far above means saturation, which no amount of sample preparation recovers.</p>
+</svg></div><p class="swipe">Swipe the chart sideways, or read the same numbers below.</p><div class="figscroll"><table class="posdata"><thead><tr><th>module</th><th>biomarker</th><th class="n">constant</th><th class="n">clinical range</th><th class="n">analyte / constant</th></tr></thead><tbody><tr><td class="bm">PuORh</td><td>Putrescine</td><td class="n">Km = 8.2 <span class="u">µM</span></td><td class="n">0.68 – 2.75 <span class="u">µM</span></td><td class="n">0.34</td></tr><tr><td class="bm">OpaPAO1</td><td>DiAcSpm</td><td class="n">Km = 3.6 <span class="u">µM</span></td><td class="n">0.0744 – 0.17 <span class="u">µM</span></td><td class="n">0.047</td></tr><tr><td class="bm">OpaPAO3</td><td>DiAcSpm</td><td class="n">Km = 7.1 <span class="u">µM</span></td><td class="n">0.0744 – 0.17 <span class="u">µM</span></td><td class="n">0.024</td></tr><tr><td class="bm">DhaPAO (alt buffer)</td><td>DiAcSpm</td><td class="n">Km = 83.0 <span class="u">µM</span></td><td class="n">0.0744 – 0.17 <span class="u">µM</span></td><td class="n">0.0021</td></tr><tr><td class="bm">SoxB</td><td>Sarcosine</td><td class="n">Km = 1.7×10<sup>4</sup> <span class="u">µM</span></td><td class="n">6.46 – 9.55 <span class="u">µM</span></td><td class="n">5.6×10<sup>-4</sup></td></tr><tr><td class="bm">DhaPAO</td><td>DiAcSpm</td><td class="n">Km = 310 <span class="u">µM</span></td><td class="n">0.0744 – 0.17 <span class="u">µM</span></td><td class="n">5.5×10<sup>-4</sup></td></tr></tbody></table></div></div>
+<p class='aside'>Every constant plotted here is a K<sub>m</sub>: all of these are type A modules. <b>No type B module appears at all</b> &mdash; the only one in the library with a published K<sub>d</sub> is BetI, and choline has no clinical distribution to plot it against. That gap in the data, not the chemistry, is what currently limits the second module type. Sitting far below the constant is survivable &mdash; the branch is simply first order there &mdash; but it costs enzyme loading and signal. Sitting far above means saturation, which no amount of sample preparation recovers.</p>
 </section><section id='library'>
 <h2>The screen</h2>
 <p class='h2sub'>Every module against every study</p>
@@ -304,7 +320,7 @@ footer a{color:var(--series-a)}
 <p>Urinary polyamines rise in colorectal cancer &mdash; and also in benign gastrointestinal disease, which is exactly what costs the published assays their specificity. Reading several modules at once is the way out, and against a fixed skeleton that is a cloning job rather than a redesign.</p>
 <p class='aside'>How much a panel gains depends on how its markers co-vary, and that needs them measured in the same patients. Not one source in this library reports it. So each panel is given as a <b>range</b> over every correlation from 0 to 0.7, never as a single number, and the verdict is taken from the worst point of that range. Where the upper end comes from a suppressor effect &mdash; correlated markers cancelling shared variation &mdash; the row says so, because that gain needs the correlation known exactly and does not survive estimating it.</p>
 <h3>Colorectal</h3>
-<table class="panels"><thead><tr><th>panel</th><th class="n">AUC range</th><th class="n">sens=spec</th><th>verdict</th></tr></thead><tbody>
+<div class="figscroll"><table class="panels"><thead><tr><th>panel</th><th class="n">AUC range</th><th class="n">sens=spec</th><th>verdict</th></tr></thead><tbody>
 <tr class="v-holds"><td class="bm">DiAcSpm + Putrescine</td><td class="n">0.933 – 0.95</td><td class="n">86% – 88%</td><td class="why">AUC stays at or above 0.933 for every correlation from 0 to 0.7, so the panel does not depend on an assumption about rho</td></tr>
 <tr class="v-holds"><td class="bm">Putrescine</td><td class="n">0.933</td><td class="n">86%</td><td class="why">AUC stays at or above 0.933 for every correlation from 0 to 0.7, so the panel does not depend on an assumption about rho</td></tr>
 <tr class="v-holds"><td class="bm">DiAcSpm</td><td class="n">0.749</td><td class="n">68%</td><td class="why">AUC stays at or above 0.748 for every correlation from 0 to 0.7, so the panel does not depend on an assumption about rho</td></tr>
@@ -313,12 +329,12 @@ footer a{color:var(--series-a)}
 <h2>Swapping the enzyme</h2>
 <p class='h2sub'>Catalytic efficiency is not the lever it looks like</p>
 <h3>DiAcSpm</h3>
-<table class="enz"><thead><tr><th>enzyme</th><th>organism</th><th class="n">kcat <span class="u">s⁻¹</span></th><th class="n">Km <span class="u">µM</span></th><th class="n">kcat/Km <span class="u">µM⁻¹s⁻¹</span></th><th class="n">relative</th></tr></thead><tbody>
+<div class="figscroll"><table class="enz"><thead><tr><th>enzyme</th><th>organism</th><th class="n">kcat <span class="u">s⁻¹</span></th><th class="n">Km <span class="u">µM</span></th><th class="n">kcat/Km <span class="u">µM⁻¹s⁻¹</span></th><th class="n">relative</th></tr></thead><tbody>
 <tr><td class="bm">OpaPAO1</td><td>Ogataea parapolymorpha</td><td class="n">260</td><td class="n">3.6</td><td class="n">72.2</td><td class="n">142×</td></tr>
 <tr><td class="bm">DhaPAO (alt buffer)</td><td>Debaryomyces hansenii</td><td class="n">158</td><td class="n">83.0</td><td class="n">1.9</td><td class="n">3.73×</td></tr>
 <tr><td class="bm">OpaPAO3</td><td>Ogataea parapolymorpha</td><td class="n">11.6</td><td class="n">7.1</td><td class="n">1.63</td><td class="n">3.21×</td></tr>
 <tr><td class="bm">DhaPAO</td><td>Debaryomyces hansenii</td><td class="n">158</td><td class="n">310</td><td class="n">0.51</td><td class="n">1×</td></tr>
-</tbody></table>
+</tbody></table></div>
 <p class="aside">Catalytic efficiency spans 142× across these enzymes; the device fold spans 1.06×. Below Km the branch is first order in kcat/Km, so efficiency buys lower enzyme loading, not signal — the ceiling is set by the cell’s own peroxide flux, which no enzyme moves.</p>
 </section><section id='model'>
 <h2>The model underneath</h2>
@@ -354,7 +370,7 @@ footer a{color:var(--series-a)}
 <p class='h2sub'>Every number traces to one of these</p>
 <p class='aside'>Each entry lists what it supplies. A constant with no source here does not exist in the library: missing data is reported as missing, never filled in by analogy.</p>
 <ol class="refs">
-<li><a href="https://doi.org/10.1002/1097-0142(19900215)65:4&lt;958::AID-CNCR2820650423&gt;3.0.CO;2-Z" rel="noreferrer">10.1002/1097-0142(19900215)65:4&lt;958::AID-CNCR2820650423&gt;3.0.CO;2-Z</a><span class="use">clinical: Putrescine in Colorectal; clinical: Spermidine in Colorectal; clinical: Spermine in Colorectal</span></li>
+<li><a href="https://doi.org/10.1002/1097-0142(19900215)65:4%3C958::AID-CNCR2820650423%3E3.0.CO;2-Z" rel="noreferrer">10.1002/1097-0142(19900215)65:4&lt;958::AID-CNCR2820650423&gt;3.0.CO;2-Z</a><span class="use">clinical: Putrescine in Colorectal; clinical: Spermidine in Colorectal; clinical: Spermine in Colorectal</span></li>
 <li><a href="https://doi.org/10.1002/2211-5463.70119" rel="noreferrer">10.1002/2211-5463.70119</a><span class="use">module: SoxB (Sarcosine)</span></li>
 <li><a href="https://doi.org/10.1002/pros.22514" rel="noreferrer">10.1002/pros.22514</a><span class="use">clinical: Sarcosine in Prostate</span></li>
 <li><a href="https://doi.org/10.1007/BF02065536" rel="noreferrer">10.1007/BF02065536</a><span class="use">clinical: Putrescine in Colorectal; clinical: Spermidine in Colorectal; clinical: Spermine in Colorectal</span></li>
