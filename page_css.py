@@ -201,6 +201,131 @@ footer{margin:96px 0 0;padding-top:26px;border-top:1px solid var(--grid);
        color:var(--ink-3);font-size:13px;line-height:1.65;max-width:66ch}
 footer a{color:var(--series-a)}
 
+/* ---------------------------------------------------------------- numbering
+   One figure sequence across the whole document, and numbered sections. That
+   is what makes a long page citable: "Figure 9" is a reference a reader can
+   act on, "the chart above" is not. */
+.secno{font-family:var(--mono);color:var(--series-a);font-weight:500;
+       margin-right:.7em;letter-spacing:0}
+h3 .secno{color:var(--ink-3);font-size:.88em}
+.h3sub{color:var(--ink-2);font-size:14.5px;line-height:1.6;max-width:66ch;
+       margin:0 0 14px}
+
+/* two-level contents rail */
+.rail ol ol{margin:2px 0 8px}
+.rail ol ol a{font-size:12px;padding:3px 0 3px 22px;color:var(--ink-3)}
+.rail .num{font-family:var(--mono);opacity:.55;margin-right:.5em}
+
+/* ------------------------------------------------------------------ figures */
+figure.fig{margin:30px 0 34px;padding:0}
+figure.fig figcaption,figure.tbl figcaption{color:var(--ink-2);font-size:13.5px;
+    line-height:1.6;max-width:74ch;margin:14px 0 0}
+figure.tbl figcaption{margin:0 0 14px}
+figure.fig figcaption b,figure.tbl figcaption b{color:var(--ink-1);
+    font-family:var(--sans);font-weight:600;white-space:nowrap}
+.fignote{color:var(--ink-3);font-size:12.5px;line-height:1.55;max-width:70ch;
+         margin:8px 0 0}
+figure.tbl{margin:30px 0 34px;padding:0}
+.scroll{overflow-x:auto;overscroll-behavior-x:contain}
+.scroll::-webkit-scrollbar{height:8px}
+.scroll::-webkit-scrollbar-thumb{background:var(--axis);border-radius:4px}
+
+/* chart furniture, shared by every figure charts.py draws */
+svg.chart{width:100%;height:auto;display:block}
+.figscroll svg.chart{min-width:620px}
+line.grid{stroke:var(--grid);stroke-width:1}
+line.gridmin{stroke:var(--grid);stroke-width:1;opacity:.45}
+line.spine{stroke:var(--axis);stroke-width:1.2}
+line.tickmark{stroke:var(--axis);stroke-width:1.2}
+text.tick{fill:var(--ink-3);font-size:11px;font-family:var(--mono);
+          font-variant-numeric:tabular-nums}
+text.axt{fill:var(--ink-2);font-size:12px;font-family:var(--sans)}
+text.lgd{fill:var(--ink-1);font-size:12.5px;font-family:var(--sans)}
+text.lgdsub{fill:var(--ink-3);font-size:11.5px;font-family:var(--sans)}
+text.note{fill:var(--ink-3);font-size:11.5px;font-family:var(--sans)}
+text.chord{fill:var(--critical);font-size:11.5px;font-weight:600;
+           font-family:var(--mono)}
+text.ptlab{fill:var(--ink-1);font-size:12.5px;font-weight:600;
+           font-family:var(--sans)}
+text.ptsub{fill:var(--ink-3);font-size:11px;font-family:var(--sans)}
+text.rowlab2{fill:var(--ink-1);font-size:12.5px;font-family:var(--sans)}
+text.rownote2{fill:var(--ink-3);font-size:11px;font-family:var(--mono);
+              font-variant-numeric:tabular-nums}
+text.grphd{fill:var(--ink-3);font-size:10.5px;letter-spacing:.12em;
+           text-transform:uppercase;font-family:var(--sans)}
+text.holds{fill:var(--good);font-size:11px;font-family:var(--sans)}
+text.breaks{fill:var(--critical);font-size:11px;font-weight:600;
+            font-family:var(--sans)}
+
+/* ---------------------------------------------------------------- equations
+   Written in HTML rather than loaded as a maths library: there are nine of
+   them, none is more than one line deep, and a third of a megabyte of
+   dependency to set one fraction is not a trade worth making on a page that
+   has to load over a conference wifi. */
+.eq{margin:20px 0;padding:18px 22px;background:var(--surface-1);
+    border:1px solid var(--ring);border-radius:12px;overflow-x:auto}
+.eq .l{display:block;font-family:var(--mono);font-size:14.5px;line-height:2.1;
+       color:var(--ink-1);white-space:nowrap}
+.eq .l+.l{margin-top:6px}
+dl.where+p,dl.where+.aside{margin-top:18px}
+.eq em{font-style:italic;font-family:var(--serif);font-size:1.05em}
+.eq sub,.eq sup{font-size:.72em}
+/* a fraction set in HTML: the column has to be centred on the baseline of the
+   line it sits in, and it must not inherit the generous line-height the
+   equation block uses, or the numerator and denominator drift apart */
+.frac{display:inline-flex;flex-direction:column;align-items:stretch;
+      justify-content:center;vertical-align:middle;line-height:1.3;
+      text-align:center;margin:0 .22em}
+.frac>span{padding:0 .45em;display:block}
+.frac .num{border-bottom:1px solid currentColor;padding-bottom:1px}
+.frac .den{padding-top:1px}
+dl.where{margin:14px 0 0;font-size:14px;color:var(--ink-2);line-height:1.6;
+         display:grid;grid-template-columns:auto 1fr;gap:6px 16px;
+         max-width:72ch;align-items:baseline}
+dl.where dt{font-family:var(--mono);font-size:13px;color:var(--ink-1);
+            white-space:nowrap}
+dl.where dd{margin:0}
+.eqlab{display:block;color:var(--ink-3);font-size:11px;letter-spacing:.11em;
+       text-transform:uppercase;margin:0 0 10px;font-family:var(--sans)}
+
+/* ------------------------------------------------------- parameter tables */
+table.params{min-width:840px}
+table.params td.nm{font-family:var(--mono);font-size:12.5px;white-space:nowrap;
+                   color:var(--ink-1)}
+table.params td.pnote{color:var(--ink-3);font-size:12px;line-height:1.5;
+                      min-width:28ch}
+table.params td.u{color:var(--ink-3);font-size:12px;white-space:nowrap}
+.kind{display:inline-block;font-size:10.5px;letter-spacing:.07em;
+      text-transform:uppercase;padding:3px 7px;border-radius:5px;
+      font-weight:600;white-space:nowrap;font-family:var(--sans)}
+.kind.measured{background:rgba(12,163,12,.13);color:var(--good)}
+.kind.derived{background:rgba(42,120,214,.13);color:var(--series-a)}
+.kind.assumed{background:rgba(250,178,25,.17);color:#8a6100}
+.kind.chosen,.kind.definition{background:var(--plane);color:var(--ink-3)}
+tr.grphead td{background:var(--plane);font-size:10.5px;letter-spacing:.12em;
+              text-transform:uppercase;color:var(--ink-3);font-weight:600;
+              padding:9px 12px}
+
+/* ------------------------------------------------------------- citations */
+a.cite{font-family:var(--mono);font-size:.74em;vertical-align:.42em;
+       color:var(--series-a);text-decoration:none;padding:0 .08em;
+       font-weight:500}
+a.cite:hover{text-decoration:underline}
+ol.refs li{scroll-margin-top:90px}
+ol.refs li:target{background:rgba(42,120,214,.08);border-radius:6px;
+                  padding:6px 8px 6px 4px;margin-left:-8px}
+
+/* a finding that contradicts something this project previously asserted */
+.flag{margin:22px 0;padding:18px 22px;border-radius:12px;
+      background:var(--surface-1);border:1px solid var(--ring);
+      border-left:3px solid var(--warning)}
+.flag p{margin:0;font-size:14.5px;line-height:1.65;color:var(--ink-2);
+        max-width:68ch}
+.flag p+p{margin-top:12px}
+.flag b{color:var(--ink-1)}
+.flag .h{display:block;font-size:11px;letter-spacing:.12em;
+         text-transform:uppercase;color:#8a6100;margin:0 0 8px;font-weight:600}
+
 @media (max-width:980px){
   .shell{grid-template-columns:1fr;gap:0;padding:0 20px 90px}
   .rail{position:static;max-height:none;padding:22px 0 0;
@@ -218,5 +343,10 @@ footer a{color:var(--series-a)}
         padding:22px 0 24px}
   .tile:last-child{border-bottom:none}
   .callout{padding:22px 20px}
+  .eq .l{font-size:12.5px}
+  dl.where{grid-template-columns:1fr;gap:2px 0}
+  dl.where dd{margin:0 0 10px}
+  figure.fig,figure.tbl{margin:22px 0 26px}
+  .rail ol ol{display:none}
 }
 """

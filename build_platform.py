@@ -23,8 +23,8 @@ sys.path.insert(0, HERE)
 
 import enzymes                                             # noqa: E402
 import sensorlab                                           # noqa: E402
-from sensorlab import (data, panels, performance, report,   # noqa: E402
-                       stage1, stage2, tables)
+from sensorlab import (analysis, data, panels, performance,  # noqa: E402
+                       report, stage1, stage2, tables)
 
 OUT = os.path.join(HERE, "platform.json")
 PAGE = os.path.join(HERE, "index.html")
@@ -306,6 +306,13 @@ def build(scenario="screen_default"):
         enzyme_loading=enzyme_loading(bundle, cands),
         counts=counts,
         panels={k: [export_panel(p, pf) for p in v] for k, v in all_panels.items()},
+        analysis=analysis.build(bundle, res, all_panels),
+        # The constants, with what fixes each one. Most of this chassis is
+        # assumed rather than measured, and a parameter table that did not say
+        # so would be the most misleading thing on the page.
+        parameters=tables.read("platform.csv"),
+        scenario_rows=[r for r in tables.read("scenarios.csv")
+                       if r.get("scenario") == scenario],
         out_of_scope=tables.read("out_of_scope.csv"),
         gaps=dict(
             no_clinical=sorted({c["biomarker"] for c in cands
@@ -321,11 +328,22 @@ def build(scenario="screen_default"):
 
 
 def main(argv):
-    payload = build()
-    with open(OUT, "w", encoding="utf-8", newline="\n") as fh:
-        json.dump(payload, fh, indent=1, ensure_ascii=False, sort_keys=True)
-    size = os.path.getsize(OUT) / 1024.0
-    print("wrote %s (%.1f KB)" % (os.path.basename(OUT), size))
+    # The screen integrates a few hundred stiff ODEs - the tornado and the
+    # scaling check each re-run the whole chain once per parameter - so a full
+    # build is minutes, not seconds. --page-only re-renders from the exported
+    # data instead, which is the loop to use while working on the page itself.
+    # It cannot change a number: everything it draws is already in the file.
+    if "--page-only" in argv:
+        with open(OUT, encoding="utf-8") as fh:
+            payload = json.load(fh)
+        print("read %s (%.1f KB), not recomputing"
+              % (os.path.basename(OUT), os.path.getsize(OUT) / 1024.0))
+    else:
+        payload = build()
+        with open(OUT, "w", encoding="utf-8", newline="\n") as fh:
+            json.dump(payload, fh, indent=1, ensure_ascii=False, sort_keys=True)
+        print("wrote %s (%.1f KB)"
+              % (os.path.basename(OUT), os.path.getsize(OUT) / 1024.0))
     print("  %d sensors, %d studies, %d candidates"
           % (len(payload["sensors"]), len(payload["studies"]),
              len(payload["candidates"])))
@@ -342,11 +360,13 @@ def main(argv):
               % (os.path.basename(PAGE), len(html.encode("utf-8")) / 1024.0))
         for need in ("<!DOCTYPE html>", "</html>", "Km", "References"):
             assert need in html, "missing from the page: " + need
-        # A Python None in the markup means a figure the renderer thought it had
-        # and did not. It must surface as an em dash and a stated reason, never
-        # as the word None.
-        assert ">None<" not in html and " None " not in html, \
-            "a Python None reached the markup"
+        # A Python value in the markup means a figure the renderer thought
+        # it had and did not. It must surface as an em dash and a stated
+        # reason, never as the word None. render_page.leaks looks only in
+        # value positions, so the English word in a caption is fine.
+        import render_page
+        found = render_page.leaks(html)
+        assert not found, "a Python value reached the markup: %r" % (found[:5],)
         print("  page checks passed")
 
     if "--print" in argv:

@@ -248,6 +248,10 @@ def feasibility(sensor, s1, bundle):
             % (", ".join(sorted(set(unevaluated))),
                "it" if len(set(unevaluated)) == 1 else "they"))
 
+    # Kept so analysis.py can re-run this module on the identical parameter
+    # set rather than reassembling one that might differ. Neither is exported.
+    out["params"], out["binders"] = p0, binders
+
     # --- fold at the scenario's own concentration factor -------------------
     base_fold, extras = branch(p0, binders)
     out["fold_at_scenario"] = base_fold

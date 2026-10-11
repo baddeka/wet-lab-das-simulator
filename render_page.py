@@ -13,6 +13,7 @@ data, and the page says so in words.
 """
 import html
 import math
+import re
 
 PALETTE = """
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -28,6 +29,7 @@ PALETTE = """
   --ring: rgba(11,11,11,.10);
   --series-a: #2a78d6;
   --series-b: #eb6834;
+  --series-c: #1a9e76;
   --good: #0ca30c;
   --warning: #fab219;
   --critical: #d03b3b;
@@ -44,10 +46,33 @@ PALETTE_DARK = """
   --ring: rgba(255,255,255,.10);
   --series-a: #3987e5;
   --series-b: #d95926;
+  --series-c: #21a97f;
   --good: #0ca30c;
   --warning: #fab219;
   --critical: #d03b3b;
 """
+
+
+LEAK = re.compile(
+    # a Python value that reached the markup: a bare text node, an attribute
+    # value, or a number slot followed by its unit or multiplier
+    r">(?:None|nan|NaN|undefined)<"
+    r"|=['\"](?:None|nan|NaN|undefined)['\"]"
+    r"|(?:None|nan|NaN|undefined)\s*(?:&times;|×|&#181;M|µM|s&#8315;| ?s⁻)"
+    r"|\((?:None|nan|NaN|undefined)\)"
+    r"|%[sdfgr]|\{\}")
+
+
+def leaks(html):
+    """Snippets where a Python value or an unfilled format slot reached the page.
+
+    The first version of this check was `" None " not in html`, which is too
+    blunt: it fails on the English word in a caption while still missing
+    stroke-dasharray='None'. A leak is a value in a value position, so that is
+    what is matched.
+    """
+    return [html[max(0, m.start() - 40):m.end() + 40]
+            for m in LEAK.finditer(html)]
 
 LIGHT_WORD = {"green": "passes", "yellow": "needs concentration", "red": "fails"}
 LIGHT_ICON = {"green": "●", "yellow": "◐", "red": "○"}
@@ -200,8 +225,9 @@ def positioning_chart(rows):
     def x(v):
         return L + plot * (math.log10(v) - math.log10(lo)) / (math.log10(hi) - math.log10(lo))
 
-    out = ['<svg class="chart" viewBox="0 0 %d %d" role="img" '
-           'aria-label="Module constant against clinical range, logarithmic axis">' % (W, H)]
+    out = ['<svg class="chart" style="max-width:%dpx" viewBox="0 0 %d %d" '
+           'role="img" aria-label="Module constant against clinical range, '
+           'logarithmic axis">' % (W, W, H)]
 
     d = int(math.log10(lo))
     while 10 ** d <= hi:

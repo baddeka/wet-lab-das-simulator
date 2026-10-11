@@ -107,10 +107,29 @@ def separation(s1, device_fold, platform):
         reader_log_sd=rdr,
         bio_log_sd_healthy=lsd_h, bio_log_sd_sick=lsd_s,
         total_log_sd_healthy=tot_h, total_log_sd_sick=tot_s,
+        delta_log=delta, delta_log_clinical=abs(math.log(s1["fold_magnitude"])),
         d_at_reader=d, auc_at_reader=auc,
         sensitivity_youden=youden, specificity_youden=youden,
         reader_dominates=rdr > c * max(lsd_h, lsd_s),
     ), None
+
+
+def equal_error_rate(sd_h, sd_s, delta):
+    """The cut-off at which sensitivity equals specificity, and that value.
+
+    Phi(d/2) above is this quantity only when the two cohorts have the same
+    spread. They do not always: on the log scale the sick cohort is the tighter
+    one for diacetylspermine and the looser one for putrescine. Equating the two
+    error rates, t/sd_h = (delta - t)/sd_s, gives the exact root used here.
+
+    The gap is small - two tenths of a percentage point across this library -
+    but a figure has to put the cut-off at one place on an axis, and it should
+    be the place the reported number refers to.
+    """
+    if not sd_h or not sd_s or delta is None:
+        return None
+    return dict(cut=float(delta * sd_h / (sd_h + sd_s)),
+                value=float(norm.cdf(delta / (sd_h + sd_s))))
 
 
 def at_cutoff(s1, perf, sens_target):

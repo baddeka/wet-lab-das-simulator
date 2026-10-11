@@ -1,32 +1,32 @@
-name,value,units,group,note
-phi_per_OD,8e-4,fraction per OD600,geometry,Cell volume fraction per unit OD600.
-peri_frac,0.16,fraction of cell volume,geometry,Periplasm as a fraction of cell volume.
-k_mem,90.0,1/s,h2o2,"Cytoplasm-medium H2O2 exchange, P*(S/V)."
-k_scav,700.0,1/s,h2o2,Intracellular H2O2 scavenging by KatG/KatE/AhpCF in the wild type.
-k_scav_knockout,5.0,1/s,h2o2,Residual scavenging in a catalase/peroxidase triple knockout (Hpx-). Used only to test whether a type-A candidate needs the knockout to pass.
-P_endo,14.0,uM/s,h2o2,Endogenous cytoplasmic H2O2 production in a growing culture.
-k_chem,0.0,1/s,h2o2,Chemical H2O2 loss in the medium. Zero unless the sample matrix contributes.
-K_oxyr,0.10,uM,oxyr,Cytoplasmic H2O2 at half OxyR activation.
-n_hill,1.0,dimensionless,oxyr,Hill coefficient of OxyR activation.
-beta,5e-3,uM/s,reporter,Promoter output at full OxyR activation.
-leak,2e-5,uM/s,reporter,Basal promoter output.
-gfp_maturation_halflife_s,360.0,s,reporter,sfGFP maturation half-life. k_mat = ln2 / this.
-growth_doubling_pre_s,2400.0,s,reporter,Doubling time before the assay. mu_pre = ln2 / this.
-growth_doubling_s,2400.0,s,reporter,Doubling time during the assay. mu = ln2 / this.
-cv_reader,0.05,fraction,reader,Relative SD of a single fluorescence measurement.
-n_rep,3,count,reader,Technical replicates.
-creatinine_MW_g_per_mol,113.12,g/mol,chemistry,Molar mass of creatinine. Converts creatinine g/L to mol/L for the per-mol-creatinine units.
-hill_n_binding,1.0,dimensionless,binding,"Hill coefficient assumed for module types B and C. Modelling assumption, not a measured constant: 1.0 means non-cooperative single-site binding. No source reports a Hill coefficient for any sensor in sensors.csv."
-z_required,2.8,dimensionless,threshold,Z needed to call two fluorescence readings separable at the reader.
-auc_pass_min,0.70,dimensionless,threshold,Reported AUC at or above which stage 1 passes on the AUC route.
-p_pass_max,0.05,dimensionless,threshold,Two-sided Welch p below which stage 1 can pass on the statistics route.
-cohens_d_pass_min,0.8,dimensionless,threshold,"Absolute Cohen's d required alongside the p-value. Both are needed, so a tiny effect at huge n does not pass."
-sd_over_value_max,1.0,dimensionless,threshold,"Applies only to an SD reconstructed from a range or an IQR. If that SD exceeds the central value by more than this, the strictly positive quantity cannot be anywhere near normal, the reconstruction is not trustworthy, and the row is called insufficient rather than failed. A spread the authors reported directly as an SD or SEM is never second-guessed this way."
-conc_factor_max,40.0,fold,threshold,Largest sample concentration factor considered achievable. Above this a candidate is red rather than yellow.
-kd_ratio_lo,0.1,dimensionless,threshold,Analyte/Kd below this is called below-Kd: the sensor sits in its dead zone.
-kd_ratio_hi,10.0,dimensionless,threshold,Analyte/Kd above this is called saturated.
-conversion_target,0.95,fraction,threshold,"Fraction of the analyte that must be turned over inside the read time. Sets the minimum enzyme loading reported by the enzyme comparison."
-knockout_gain_min,1.02,fold,threshold,"Relative fold improvement a scavenger knockout must give before it is called helpful, rather than noise in the integration."
-panel_rho_independent,0.0,dimensionless,panel,"Correlation assumed between markers from unrelated pathways. The optimistic bound on a panel: markers carry independent information."
-panel_rho_correlated,0.7,dimensionless,panel,"Correlation assumed between markers of the same pathway, such as putrescine, spermidine and spermine, which share the polyamine biosynthetic route. The pessimistic bound. Neither value is measured: no source in clinical.csv reports a covariance between markers in the same patients, so panels are reported as a range between these two and never as a point estimate."
-panel_max_size,4,count,panel,Largest panel considered. Beyond this the combinatorics stop being informative given how few modules clear stage 2.
+name,value,units,group,note,source_kind,source_doi,source_note
+phi_per_OD,8e-4,fraction per OD600,geometry,Cell volume fraction per unit OD600.,assumed,,Standard E. coli cell volume per OD600. No source is recorded for it in this project.
+peri_frac,0.16,fraction of cell volume,geometry,Periplasm as a fraction of cell volume.,assumed,,Standard periplasmic volume fraction. No source is recorded for it in this project.
+k_mem,90.0,1/s,h2o2,"Cytoplasm-medium H2O2 exchange, P*(S/V).",derived,10.1128/JB.183.24.7182-7189.2001,"The membrane permeability coefficient of 1.6e-3 cm/s reported in this work, times a surface-to-volume ratio of about 6 per um for an E. coli cell."
+k_scav,700.0,1/s,h2o2,Intracellular H2O2 scavenging by KatG/KatE/AhpCF in the wild type.,derived,10.1128/JB.183.24.7182-7189.2001,Not measured directly. Forced by two measurements in this work: a production rate of 14 uM/s against a resting cytoplasmic level of about 0.02 uM gives 700 /s.
+k_scav_knockout,5.0,1/s,h2o2,Residual scavenging in a catalase/peroxidase triple knockout (Hpx-). Used only to test whether a type-A candidate needs the knockout to pass.,assumed,,"Chosen so a catalase/peroxidase triple knockout rests near 2.8 uM. Used only to test whether a candidate would need the knockout, never as a measurement."
+P_endo,14.0,uM/s,h2o2,Endogenous cytoplasmic H2O2 production in a growing culture.,measured,10.1128/JB.183.24.7182-7189.2001,Endogenous cytoplasmic H2O2 formation in aerobically growing E. coli.
+k_chem,0.0,1/s,h2o2,Chemical H2O2 loss in the medium. Zero unless the sample matrix contributes.,chosen,,"Set to zero. A sample matrix that destroys peroxide would make this positive, and none of the studies reports it."
+K_oxyr,0.10,uM,oxyr,Cytoplasmic H2O2 at half OxyR activation.,measured,10.1073/pnas.96.11.6161,"In vitro titration: 0.1 uM oxidised half of the purified protein within 30 s, and between 0.05 and 0.2 uM did so across conditions. The same work needed 5 uM applied outside the cell for the same effect in vivo, which is the scavenging this model carries separately as k_scav rather than folding it into K."
+n_hill,1.0,dimensionless,oxyr,Hill coefficient of OxyR activation.,assumed,,Non-cooperative. OxyR is a dimer of dimers and could be cooperative; no source in this project measures it.
+beta,5e-3,uM/s,reporter,Promoter output at full OxyR activation.,assumed,,"Promoter output at full activation. Sets the signal scale, not the fold between two samples, which is what every verdict uses."
+leak,2e-5,uM/s,reporter,Basal promoter output.,assumed,,"Basal promoter output. Sets the blank, not the fold between two samples."
+gfp_maturation_halflife_s,360.0,s,reporter,sfGFP maturation half-life. k_mat = ln2 / this.,assumed,,sfGFP maturation half-life. No source is recorded for it in this project.
+growth_doubling_pre_s,2400.0,s,reporter,Doubling time before the assay. mu_pre = ln2 / this.,chosen,,"An operating condition of the assay, not a property of anything."
+growth_doubling_s,2400.0,s,reporter,Doubling time during the assay. mu = ln2 / this.,chosen,,"An operating condition of the assay, not a property of anything."
+cv_reader,0.05,fraction,reader,Relative SD of a single fluorescence measurement.,chosen,,"The reader this screen assumes. It sets the limit of detection, so the sensitivity analysis varies it."
+n_rep,3,count,reader,Technical replicates.,chosen,,"Replicates per sample, an operating choice."
+creatinine_MW_g_per_mol,113.12,g/mol,chemistry,Molar mass of creatinine. Converts creatinine g/L to mol/L for the per-mol-creatinine units.,definition,,A molar mass.
+hill_n_binding,1.0,dimensionless,binding,"Hill coefficient assumed for module types B and C. Modelling assumption, not a measured constant: 1.0 means non-cooperative single-site binding. No source reports a Hill coefficient for any sensor in sensors.csv.",assumed,,Non-cooperative single-site binding. No source reports a Hill coefficient for any sensor in sensors.csv.
+z_required,2.8,dimensionless,threshold,Z needed to call two fluorescence readings separable at the reader.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+auc_pass_min,0.70,dimensionless,threshold,Reported AUC at or above which stage 1 passes on the AUC route.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+p_pass_max,0.05,dimensionless,threshold,Two-sided Welch p below which stage 1 can pass on the statistics route.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+cohens_d_pass_min,0.8,dimensionless,threshold,"Absolute Cohen's d required alongside the p-value. Both are needed, so a tiny effect at huge n does not pass.",chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+sd_over_value_max,1.0,dimensionless,threshold,"Applies only to an SD reconstructed from a range or an IQR. If that SD exceeds the central value by more than this, the strictly positive quantity cannot be anywhere near normal, the reconstruction is not trustworthy, and the row is called insufficient rather than failed. A spread the authors reported directly as an SD or SEM is never second-guessed this way.",chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+conc_factor_max,40.0,fold,threshold,Largest sample concentration factor considered achievable. Above this a candidate is red rather than yellow.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+kd_ratio_lo,0.1,dimensionless,threshold,Analyte/Kd below this is called below-Kd: the sensor sits in its dead zone.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+kd_ratio_hi,10.0,dimensionless,threshold,Analyte/Kd above this is called saturated.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+conversion_target,0.95,fraction,threshold,Fraction of the analyte that must be turned over inside the read time. Sets the minimum enzyme loading reported by the enzyme comparison.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+knockout_gain_min,1.02,fold,threshold,"Relative fold improvement a scavenger knockout must give before it is called helpful, rather than noise in the integration.",chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+panel_rho_independent,0.0,dimensionless,panel,Correlation assumed between markers from unrelated pathways. The optimistic bound on a panel: markers carry independent information.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+panel_rho_correlated,0.7,dimensionless,panel,"Correlation assumed between markers of the same pathway, such as putrescine, spermidine and spermine, which share the polyamine biosynthetic route. The pessimistic bound. Neither value is measured: no source in clinical.csv reports a covariance between markers in the same patients, so panels are reported as a range between these two and never as a point estimate.",chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."
+panel_max_size,4,count,panel,Largest panel considered. Beyond this the combinatorics stop being informative given how few modules clear stage 2.,chosen,,"A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason."

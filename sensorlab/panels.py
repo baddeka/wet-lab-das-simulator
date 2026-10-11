@@ -114,6 +114,16 @@ def verdict(panel, platform):
     threshold = platform["auc_pass_min"]
     rho_hi = platform["panel_rho_correlated"]
 
+    # A single module has nothing to correlate with, so the rho sentence below
+    # is not merely redundant for it, it is wrong: it claims an independence
+    # from an assumption that was never in play.
+    if panel["size"] < 2:
+        if lo >= threshold:
+            return "holds", ("AUC %.3f on its own, above the %.2f this screen "
+                             "asks for" % (lo, threshold))
+        return "fails", ("AUC %.3f on its own, below the %.2f this screen asks "
+                         "for" % (lo, threshold))
+
     if lo >= threshold:
         return "holds", ("AUC stays at or above %.3f for every correlation from "
                          "0 to %g, so the panel does not depend on an "
