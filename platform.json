@@ -16235,7 +16235,7 @@
    "note": "Cell volume fraction per unit OD600.",
    "source_doi": null,
    "source_kind": "assumed",
-   "source_note": "Standard E. coli cell volume per OD600. No source is recorded for it in this project.",
+   "source_note": "No source is recorded for it in this project; it is the standard conversion.",
    "units": "fraction per OD600",
    "value": "8e-4"
   },
@@ -16245,7 +16245,7 @@
    "note": "Periplasm as a fraction of cell volume.",
    "source_doi": null,
    "source_kind": "assumed",
-   "source_note": "Standard periplasmic volume fraction. No source is recorded for it in this project.",
+   "source_note": "No source is recorded for it in this project; it is the standard fraction.",
    "units": "fraction of cell volume",
    "value": "0.16"
   },
@@ -16285,7 +16285,7 @@
    "note": "Endogenous cytoplasmic H2O2 production in a growing culture.",
    "source_doi": "10.1128/JB.183.24.7182-7189.2001",
    "source_kind": "measured",
-   "source_note": "Endogenous cytoplasmic H2O2 formation in aerobically growing E. coli.",
+   "source_note": "Measured directly in aerobically growing cells.",
    "units": "uM/s",
    "value": "14.0"
   },
@@ -16305,7 +16305,7 @@
    "note": "Cytoplasmic H2O2 at half OxyR activation.",
    "source_doi": "10.1073/pnas.96.11.6161",
    "source_kind": "measured",
-   "source_note": "In vitro titration: 0.1 uM oxidised half of the purified protein within 30 s, and between 0.05 and 0.2 uM did so across conditions. The same work needed 5 uM applied outside the cell for the same effect in vivo, which is the scavenging this model carries separately as k_scav rather than folding it into K.",
+   "source_note": "In vitro titration: 0.1 uM oxidised half the purified protein within 30 s, and 0.05 to 0.2 uM did so across conditions. The same work needed 5 uM outside the cell for the same effect in vivo, which this model carries separately as k_scav rather than folding it into K.",
    "units": "uM",
    "value": "0.10"
   },
@@ -16325,7 +16325,7 @@
    "note": "Promoter output at full OxyR activation.",
    "source_doi": null,
    "source_kind": "assumed",
-   "source_note": "Promoter output at full activation. Sets the signal scale, not the fold between two samples, which is what every verdict uses.",
+   "source_note": "Sets the signal scale, not the fold between two samples, which is what every verdict uses.",
    "units": "uM/s",
    "value": "5e-3"
   },
@@ -16335,7 +16335,7 @@
    "note": "Basal promoter output.",
    "source_doi": null,
    "source_kind": "assumed",
-   "source_note": "Basal promoter output. Sets the blank, not the fold between two samples.",
+   "source_note": "Sets the blank, not the fold between two samples.",
    "units": "uM/s",
    "value": "2e-5"
   },
@@ -16345,7 +16345,7 @@
    "note": "sfGFP maturation half-life. k_mat = ln2 / this.",
    "source_doi": null,
    "source_kind": "assumed",
-   "source_note": "sfGFP maturation half-life. No source is recorded for it in this project.",
+   "source_note": "No source is recorded for it in this project.",
    "units": "s",
    "value": "360.0"
   },
@@ -16385,7 +16385,7 @@
    "note": "Technical replicates.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "Replicates per sample, an operating choice.",
+   "source_note": "An operating choice.",
    "units": "count",
    "value": "3"
   },
@@ -16405,7 +16405,7 @@
    "note": "Hill coefficient assumed for module types B and C. Modelling assumption, not a measured constant: 1.0 means non-cooperative single-site binding. No source reports a Hill coefficient for any sensor in sensors.csv.",
    "source_doi": null,
    "source_kind": "assumed",
-   "source_note": "Non-cooperative single-site binding. No source reports a Hill coefficient for any sensor in sensors.csv.",
+   "source_note": "No source reports a Hill coefficient for any sensor in sensors.csv.",
    "units": "dimensionless",
    "value": "1.0"
   },
@@ -16415,7 +16415,7 @@
    "note": "Z needed to call two fluorescence readings separable at the reader.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "2.8"
   },
@@ -16425,7 +16425,7 @@
    "note": "Reported AUC at or above which stage 1 passes on the AUC route.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "0.70"
   },
@@ -16435,7 +16435,7 @@
    "note": "Two-sided Welch p below which stage 1 can pass on the statistics route.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "0.05"
   },
@@ -16445,7 +16445,7 @@
    "note": "Absolute Cohen's d required alongside the p-value. Both are needed, so a tiny effect at huge n does not pass.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "0.8"
   },
@@ -16455,7 +16455,7 @@
    "note": "Applies only to an SD reconstructed from a range or an IQR. If that SD exceeds the central value by more than this, the strictly positive quantity cannot be anywhere near normal, the reconstruction is not trustworthy, and the row is called insufficient rather than failed. A spread the authors reported directly as an SD or SEM is never second-guessed this way.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "1.0"
   },
@@ -16465,7 +16465,7 @@
    "note": "Largest sample concentration factor considered achievable. Above this a candidate is red rather than yellow.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "fold",
    "value": "40.0"
   },
@@ -16475,7 +16475,7 @@
    "note": "Analyte/Kd below this is called below-Kd: the sensor sits in its dead zone.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "0.1"
   },
@@ -16485,7 +16485,7 @@
    "note": "Analyte/Kd above this is called saturated.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "10.0"
   },
@@ -16495,7 +16495,7 @@
    "note": "Fraction of the analyte that must be turned over inside the read time. Sets the minimum enzyme loading reported by the enzyme comparison.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "fraction",
    "value": "0.95"
   },
@@ -16505,7 +16505,7 @@
    "note": "Relative fold improvement a scavenger knockout must give before it is called helpful, rather than noise in the integration.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "fold",
    "value": "1.02"
   },
@@ -16515,7 +16515,7 @@
    "note": "Correlation assumed between markers from unrelated pathways. The optimistic bound on a panel: markers carry independent information.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "0.0"
   },
@@ -16525,7 +16525,7 @@
    "note": "Correlation assumed between markers of the same pathway, such as putrescine, spermidine and spermine, which share the polyamine biosynthetic route. The pessimistic bound. Neither value is measured: no source in clinical.csv reports a covariance between markers in the same patients, so panels are reported as a range between these two and never as a point estimate.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "dimensionless",
    "value": "0.7"
   },
@@ -16535,7 +16535,7 @@
    "note": "Largest panel considered. Beyond this the combinatorics stop being informative given how few modules clear stage 2.",
    "source_doi": null,
    "source_kind": "chosen",
-   "source_note": "A decision rule of this screen, not a measurement. Changing it changes which candidates pass, which is why every rejection is published with its reason.",
+   "source_note": null,
    "units": "count",
    "value": "4"
   }

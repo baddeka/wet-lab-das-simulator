@@ -41,11 +41,12 @@ KIND_TITLE = {
 }
 
 # Symbols, where the parameter has one in the equations above it.
+# Only where the symbol in the equations differs from the name in the file. A
+# column that printed "leak leak" and "n_rep n_rep" was carrying no information
+# at all.
 SYMBOLS = {
-    "phi_per_OD": "φ / OD", "peri_frac": "", "k_mem": "k_mem",
-    "k_scav": "k_scav", "k_scav_knockout": "k_scav (Hpx⁻)",
-    "P_endo": "P_endo", "k_chem": "k_chem", "K_oxyr": "K", "n_hill": "n",
-    "beta": "β", "leak": "leak", "cv_reader": "CV", "n_rep": "n_rep",
+    "phi_per_OD": "φ / OD", "k_scav_knockout": "k_scav (Hpx⁻)",
+    "K_oxyr": "K", "n_hill": "n", "beta": "β", "cv_reader": "CV",
     "hill_n_binding": "n (binding)",
 }
 
@@ -153,18 +154,26 @@ def eq(lines, label=None, where=None):
 # ----------------------------------------------------------- parameter tables
 
 def _value(row):
-    v = row.get("value")
+    """What the data file says, spelled out.
+
+    This used to run every value through sig() at four figures, which turned a
+    molar mass of 113.12 into 113.1: a table of constants losing a digit of the
+    constant. The file's own text is authoritative, and only exponential
+    notation is expanded, because 8e-4 is not a form a reader checks against a
+    paper.
+    """
+    raw = (row.get("value") or "").strip()
     try:
-        f = float(v)
+        f = float(raw)
     except (TypeError, ValueError):
-        return e(v or "—")
-    return sig(f, 4)
+        return e(raw or "-")
+    return sig(f, 4) if "e" in raw.lower() else e(raw)
 
 
 def _unit(row):
     u = (row.get("units") or "").strip()
     if not u or u in ("dimensionless", "count", "fraction"):
-        return "<span class='u'>%s</span>" % e(u or "—")
+        return "<span class='u'>%s</span>" % e(u or "-")
     return e(u.replace("uM", "µM").replace("1/s", "s⁻¹")
              .replace("um", "µm"))
 
@@ -203,10 +212,10 @@ def parameters_table(d, groups, refs, cls="params"):
                        'title="%s">%s</span> %s%s</td></tr>'
                        % (name, _value(r), _unit(r),
                           e(_squash(r.get("note"))),
-                          e(_short(r.get("note"), 86)),
+                          e(_short(r.get("note"), 112)),
                           e(_squash(prov)), e(kind),
                           e(KIND_TITLE.get(kind, "")), e(kind),
-                          e(_short(prov, 124)), cite))
+                          e(_short(prov, 180)), cite))
     out.append("</tbody></table>")
     return "\n".join(out)
 

@@ -55,6 +55,32 @@ def _signed(v, _=None):
     return ("%+.1f" % v) if v else "0"
 
 
+
+def _place(ax, items, dx=0, dy=-13, gap_x=86, gap_y=13, step=15,
+           cls="ptlab", color=None, anchor="middle"):
+    """Direct labels that step out of each other's way.
+
+    Two entries whose points nearly coincide - the same enzyme in two buffers,
+    the same biomarker in two studies - printed their labels on top of one
+    another, which reads as one misspelt word rather than as two points. Labels
+    are placed in order and pushed down past whatever is already there.
+    """
+    placed = []
+    for vx, vy, text in items:
+        lx, ly = ax.x(vx) + dx, ax.y(vy) + dy
+        moved = True
+        while moved:
+            moved = False
+            for px, py in placed:
+                if abs(px - lx) < gap_x and abs(py - ly) < gap_y:
+                    ly = py + step
+                    moved = True
+        placed.append((lx, ly))
+        style = " fill='%s'" % color if color else ""
+        ax.over.append("<text class='%s' x='%.1f' y='%.1f' text-anchor='%s'%s>"
+                       "%s</text>" % (cls, lx, ly, anchor, style,
+                                      charts.esc(text)))
+
 # ------------------------------------------------------- stage 1: effect sizes
 
 def effect_sizes(d):
@@ -122,7 +148,7 @@ def effect_sizes(d):
                         "stroke='%s' stroke-width='1.6' opacity='.55'/>"
                         % (ax.x(v), y - 3.5, ax.x(v), y + 3.5, col))
         ax.dot(r["d"], i, r=4.0, color=col)
-        label = "%s · %s" % (r["cancer"] or "—", r["biofluid"] or "—")
+        label = "%s · %s" % (r["cancer"] or "-", r["biofluid"] or "-")
         ax.over.append("<text class='rowlab2' x='%.1f' y='%.1f'>%s</text>"
                        % (ax.x0 - 308, y + 4, charts.esc(label)))
         right = ("n = %d" % r["n_total"]) if r["n_total"] else "n not given"
@@ -151,18 +177,25 @@ def reconstruction(d):
     ax.line([(lo, lo), (hi, hi)], color=AXIS, width=1.5, dash="5 4")
     ax.text(ax.x(hi) - 6, ax.y(hi) + 16, "perfect agreement", cls="note",
             anchor="end", px=True)
-    for r in rows:
+    # Two sarcosine studies land a few pixels apart and their labels printed
+    # on top of each other, which read as one misspelt word. Labels are placed
+    # in order and pushed clear of the one above when they would collide.
+    placed = []
+    for r in sorted(rows, key=lambda q: (ax.y(q["rebuilt"]), ax.x(q["reported"]))):
         over = r["rebuilt"] > r["reported"]
         ax.marks.append(
             "<line x1='%.1f' y1='%.1f' x2='%.1f' y2='%.1f' stroke='%s' "
             "stroke-width='1.4' opacity='.45'/>"
             % (ax.x(r["reported"]), ax.y(r["reported"]),
                ax.x(r["reported"]), ax.y(r["rebuilt"]), BAD if over else A))
-        ax.dot(r["reported"], r["rebuilt"], r=4.5,
-               color=BAD if over else A)
-        ax.label_point(r["reported"], r["rebuilt"],
-                       "%s" % r["biomarker"],
-                       color=INK2, dx=9, dy=-5)
+        ax.dot(r["reported"], r["rebuilt"], r=4.5, color=BAD if over else A)
+        lx, ly = ax.x(r["reported"]) + 9, ax.y(r["rebuilt"]) - 5
+        for px, py in placed:
+            if abs(px - lx) < 78 and abs(py - ly) < 13:
+                ly = py + 14
+        placed.append((lx, ly))
+        ax.over.append("<text class='ptlab' x='%.1f' y='%.1f' fill='%s'>%s"
+                       "</text>" % (lx, ly, INK2, charts.esc(r["biomarker"])))
     ax.text(ax.x0 + 10, ax.y0 - 14,
             "above the line: this pipeline is optimistic", cls="note", px=True)
     return ax.svg(title="Rebuilt against reported AUC")
@@ -204,18 +237,18 @@ def dose_response(d):
     ax.dot(dr["healthy_uM"], 1.0, r=5, color=A)
     ax.dot(dr["sick_uM"], dr["fold_at_sick"], r=5, color=A)
     ax.label_point(dr["healthy_uM"], 1.0, "healthy median",
-                   sub="%s µM" % charts.log_tick_text(dr["healthy_uM"]),
+                   sub="%s µM" % charts.compact(dr["healthy_uM"]),
                    color=INK, dx=-13, dy=28, anchor="end")
     ax.label_point(dr["sick_uM"], dr["fold_at_sick"],
                    "cancer median", color=INK, dx=10, dy=-6,
                    sub="%s µM → %s"
-                       % (charts.log_tick_text(dr["sick_uM"]),
+                       % (charts.compact(dr["sick_uM"]),
                           _fold(dr["fold_at_sick"])))
     mx = math.sqrt(dr["healthy_uM"] * dr["sick_uM"])
     my = math.sqrt(1.0 * dr["fold_at_sick"])
     ax.text(mx, my, "chord slope %.3f = compression"
             % (dr.get("slope_chord") or 0.0),
-            cls="chord", anchor="middle", dy=-13)
+            cls="chord", anchor="middle", dx=-14, dy=18)
     return ax.svg(title="Device fold against analyte concentration")
 
 
@@ -298,8 +331,8 @@ def distributions(d):
             "sensitivity = specificity = %.0f%%" % (100 * s["equal_error"]),
             cls="note", anchor="middle", px=True)
     ax.legend([("healthy cohort", A), ("cancer cohort", B)], y=ax.y1 - 44)
-    ax.text(ax.x(cut) + 7, ax.y0 - 34, "false positives", cls="note", px=True)
-    ax.text(ax.x(cut) - 7, ax.y0 - 34, "missed cancers", cls="note",
+    ax.text(ax.x(cut) + 13, ax.y0 - 34, "false positives", cls="note", px=True)
+    ax.text(ax.x(cut) - 13, ax.y0 - 34, "missed cancers", cls="note",
             anchor="end", px=True)
     return ax.svg(title="The two cohorts as the reader sees them")
 
@@ -372,11 +405,13 @@ def auc_ladder(d):
     lo, hi = min(vals) - 0.03, max(vals) + 0.03
     n = len(sep)
 
-    ax = Axes(w=720, h=66 + 40 * n, left=238, right=92, top=40, bottom=52)
+    ax = Axes(w=720, h=84 + 40 * n, left=238, right=92, top=58, bottom=52)
     ax.xlim(lo, hi).ylim(n - 0.5, -0.5)
     ax.frame(xlabel="AUC", ygrid=False, xgrid=True, xfmt=_auc, yticks=[])
+    # inside the plot at the top: below the axis it landed on the 0.70 tick,
+    # above it on the key
     ax.vline(thr, color=INK3, dash="4 3", width=1.4,
-             label="screen’s pass mark", at=ax.y1 - 14)
+             label="screen’s pass mark", at=ax.y1 + 14, anchor="start")
     for i, s in enumerate(sep):
         c, v = s["clinical"]["auc"], s["device"]["auc"]
         y = ax.y(i)
@@ -396,7 +431,7 @@ def auc_ladder(d):
     ax.over.append("<text class='note' x='%.1f' y='%.1f'>◇ the cohorts "
                    "themselves · ● what the reader achieves · "
                    "c: fraction of the log difference that survives</text>"
-                   % (ax.x0 - 226, ax.y1 - 16))
+                   % (ax.x0 - 226, ax.y1 - 22))
     return ax.svg(title="AUC in the clinic against AUC at the reader")
 
 
@@ -588,11 +623,13 @@ def enzyme_charts(d, biomarker):
         left.frame(xlabel=EFF_AXIS, ylabel="fold this module delivers",
                    yfmt=_fold)
         left.band(lo, hi, A, 0.10, axis="y")
-        for i, r in enumerate(sorted(mine, key=lambda x: x["efficiency"])):
+        for r in mine:
             left.dot(r["efficiency"], r["device_fold"], r=5, color=A)
-            left.label_point(r["efficiency"], r["device_fold"], r["protein"],
-                             color=INK2, dx=0, dy=-13 if i % 2 == 0 else 22,
-                             anchor="middle")
+        # the two DhaPAO entries differ only in buffer and sit a hair apart
+        _place(left, [(r["efficiency"], r["device_fold"], r["protein"])
+                      for r in sorted(mine, key=lambda x: x["device_fold"],
+                                      reverse=True)],
+               dy=-13, gap_x=110, color=INK2)
 
     right = Axes(w=PW, h=H, left=76, right=22, top=38, bottom=64,
                  xlog=True, ylog=True)

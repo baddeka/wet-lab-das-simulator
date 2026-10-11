@@ -205,7 +205,7 @@ footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
         <span class="u" id="v-foldsub"></span>
       </div>
       <div class="verdict-say">
-        <span class="chip" id="v-chip">&mdash;</span>
+        <span class="chip" id="v-chip">-</span>
         <p id="v-text"></p>
       </div>
     </div>
@@ -218,7 +218,7 @@ footer code{font-family:var(--mono);font-size:11px;color:var(--muted)}
     <div class="tiles" id="tiles"></div>
 
     <section class="panel">
-      <h3>Dose&ndash;response across the clinical window</h3>
+      <h3>Dose-response across the clinical window</h3>
       <div class="plot" id="plot-dose"></div>
       <p class="cap" id="cap-dose"></p>
     </section>
@@ -818,7 +818,7 @@ function render(){
   } else if (z >= 1.6){
     cls = "warn"; chipTxt = "Marginal";
     say = "Only " + z.toFixed(1) + " standard errors apart. This needs a reader CV of " +
-      (100*cvMax).toFixed(1) + " % or better, against the " + (100*S.cv).toFixed(1) + " % set here — add replicates or open up the signal.";
+      (100*cvMax).toFixed(1) + " % or better, against the " + (100*S.cv).toFixed(1) + " % set here - add replicates or open up the signal.";
   } else {
     cls = "bad"; chipTxt = "Not separable";
     say = "The biological difference is " + ((fold - 1)*100).toFixed(1) +
@@ -872,7 +872,7 @@ function render(){
         "Creatinine has to be measured in parallel, or the concentration step made sample-specific."]);
     else
       d.push(["warn", "Creatinine is not being corrected",
-        "The classes still separate here, but the hydration band on the dose–response is live and narrows the margin."]);
+        "The classes still separate here, but the hydration band on the dose-response is live and narrows the margin."]);
   }
   if (cur.xrest > 0.5*S.K_oxyr)
     d.push(["bad", "OxyR is already on in the blank",

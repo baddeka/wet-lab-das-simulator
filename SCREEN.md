@@ -1,7 +1,7 @@
 # Biosensor module screen
 
-Started as a simulator of one biosensor — diacetylspermine → DAS oxidase → H₂O₂
-→ OxyR → GFP → phone camera — and is now a tool for deciding which sensing
+Started as a simulator of one biosensor - diacetylspermine → DAS oxidase → H₂O₂
+→ OxyR → GFP → phone camera - and is now a tool for deciding which sensing
 module is worth building, for any biomarker with data in the two data files.
 
 The kinetic core is unchanged. Two compartments, the cytoplasm quasi-steady,
@@ -37,10 +37,10 @@ stage 2 instead.
 One guard worth knowing about: when an SD had to be reconstructed from a
 published range and comes out larger than the central value, a strictly
 positive quantity cannot be anywhere near normal, so *d* and *p* describe
-nothing. Those rows are called `insufficient`, not `fail` — the evidence is
+nothing. Those rows are called `insufficient`, not `fail` - the evidence is
 missing, which is a different statement from the biomarker not separating. This
 is what happens to the headline DAS row (CCR-04-2275): its sick range spans
-0.035–24.6 µmol/g, a 700× spread, and DAS survives stage 1 on a different study
+0.035-24.6 µmol/g, a 700× spread, and DAS survives stage 1 on a different study
 that does report an AUC.
 
 **Stage 2, sensor feasibility.** Only for candidates that cleared stage 1.
@@ -60,18 +60,18 @@ Type A is the original branch, the two-compartment ODE untouched. Type B enters
 the same reporter through a Hill occupancy instead of through OxyR, with no
 peroxide stage; the analyte is not consumed by a transcription factor, so the
 activation is constant across the read. Type C has no transcription and no
-reporter gene, so its response is the fold change in occupancy — converting
+reporter gene, so its response is the fold change in occupancy - converting
 that to a measured fluorescence fold would need each protein's dynamic range,
 which the sensor schema does not carry, so it is not estimated.
 
 ## Cross-reactivity
 
-Cross-reactivity is not a parameter you set — it is read out of `sensors.csv`.
+Cross-reactivity is not a parameter you set - it is read out of `sensors.csv`.
 If the same `protein_name` appears against two different biomarkers and both
 have the constant their type needs, that is published evidence the protein
 binds both, and they compete. The competitor's concentration comes from
-`clinical.csv` **restricted to the same study** — same DOI, same cancer, same
-biofluid — because levels from another cohort would mix populations and assays.
+`clinical.csv` **restricted to the same study** - same DOI, same cancer, same
+biofluid - because levels from another cohort would mix populations and assays.
 
 For types B and C the readout is total occupancy over every binder:
 
@@ -117,9 +117,9 @@ assumption, and the verdict says so instead of quietly relying on it.
 
 ## Traffic light
 
-- **green** — passes at the scenario's own concentration factor
-- **yellow** — passes with the sample concentrated, up to `conc_factor_max`
-- **red** — fails; the reason and the stage that rejected it are always printed
+- **green** - passes at the scenario's own concentration factor
+- **yellow** - passes with the sample concentrated, up to `conc_factor_max`
+- **red** - fails; the reason and the stage that rejected it are always printed
 
 Red reasons: no clinical separation, clinical data insufficient, no sensor data
 (naming the missing constant), units not convertible to µM, analyte below Kd and
@@ -138,7 +138,7 @@ enzyme or a disease is in `data/`.
 |---|---|
 | `sensors.csv` | sensing elements: the 13 columns of the agreed schema. An empty cell means no data, which is a legal state |
 | `clinical.csv` | clinical distributions: 18 columns, one row per biomarker × cancer × biofluid × study |
-| `platform.csv` | chassis, reporter, reader and thresholds — nothing biomarker-specific |
+| `platform.csv` | chassis, reporter, reader and thresholds - nothing biomarker-specific |
 | `scenarios.csv` | assay design and sample assumptions, by scenario name |
 | `units.csv` | how each unit becomes µM, and which ones cannot |
 | `spread.csv` | how each kind of published spread becomes an SD |
@@ -157,7 +157,7 @@ nothing is estimated from a similar protein.
 
 **Km of DhaPAO.** The code carried 83 µM. `build_doc.py:249` documents 83 and
 310 µM as two values published in the same paper for different buffers, with
-310 kept in the robustness grids — so 83 was a deliberate point estimate, not
+310 kept in the robustness grids - so 83 was a deliberate point estimate, not
 an oversight. Both are now rows in `sensors.csv`: 310 µM is the working value
 and 83 µM is marked as the alternative buffer and still used by the robustness
 sweeps. This matters because kcat/Km moves 1.90 → 0.51 µM⁻¹s⁻¹ between them,
@@ -183,7 +183,7 @@ number that moves in normal operation is the Km itself.
 Those seventeen scripts still contain DAS-specific numbers inline, and
 deliberately so: they are the fixture that proves the refactor was behaviour
 preserving, and stripping their constants would destroy the evidence. The
-platform code — `das_model.py`, `sensorlab/`, `screen.py`, `enzymes.py` —
+platform code - `das_model.py`, `sensorlab/`, `screen.py`, `enzymes.py` -
 contains none. The one exception is marked in `das_model.analyte_in_biofluid`
 and explained there.
 
@@ -192,7 +192,7 @@ and explained there.
 For DAS, catalytic efficiency spans 142× across the three enzymes (OpaPAO1
 72.2, OpaPAO3 1.63, DhaPAO 0.51 µM⁻¹s⁻¹) and the fold change spans 1.06×.
 Below Km the branch is first order in kcat/Km, so efficiency sets how little
-enzyme you must load — OpaPAO1 needs 23 pM against DhaPAO's 3.3 nM for the same
-95% turnover — while the fold is capped by how much peroxide the analyte can
+enzyme you must load - OpaPAO1 needs 23 pM against DhaPAO's 3.3 nM for the same
+95% turnover - while the fold is capped by how much peroxide the analyte can
 make against the cell's own flux, a ceiling the enzyme does not move. Two orders
 of catalytic efficiency buy enzyme loading, not signal.

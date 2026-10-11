@@ -91,7 +91,7 @@ SYMBOL = {"km_uM": "Km", "kcat_s": "kcat", "kd_uM": "Kd"}
 THIN = " "  # narrow no-break space, for grouping digits
 
 
-def num(x, nd=3, dash="—"):
+def num(x, nd=3, dash="-"):
     if x is None:
         return dash
     if x == 0:
@@ -107,7 +107,7 @@ def num(x, nd=3, dash="—"):
     return ("%." + str(nd) + "g") % x
 
 
-def sig(x, n=3, dash="—"):
+def sig(x, n=3, dash="-"):
     """A concentration, to a fixed number of significant figures.
 
     One rule for a whole column, so 0.0744 and 0.17 do not sit next to each
@@ -138,7 +138,7 @@ def sig(x, n=3, dash="—"):
     return whole + ("." + frac if frac else "")
 
 
-def fold(x, dash="—"):
+def fold(x, dash="-"):
     """A fold change. Always two decimals and a multiplication sign."""
     return dash if x is None else "%.2f×" % x
 
@@ -151,7 +151,7 @@ def position_word(ratio):
     This is the same phrasing the chart uses.
     """
     if ratio is None:
-        return "—"
+        return "-"
     if 0.1 <= ratio <= 10:
         return "inside the range"
     # two significant figures, not two decimals: "1800x below" is the true
@@ -161,7 +161,7 @@ def position_word(ratio):
     return "%s× above" % sig(ratio, 2)
 
 
-def pct(x, dash="—"):
+def pct(x, dash="-"):
     return dash if x is None else "%.0f%%" % (100 * x)
 
 
@@ -185,7 +185,7 @@ FLUID_SHORT = [
 
 def _fluid_short(biofluid):
     if not biofluid:
-        return "—"
+        return "-"
     for long, short in FLUID_SHORT:
         if long in biofluid:
             return short
@@ -284,7 +284,7 @@ def positioning_chart(rows):
            '<th>analyte sits</th></tr></thead><tbody>' % head]
     for r in rows:
         tab.append('<tr><td class="bm">%s</td><td>%s</td>'
-                   '<td class="n">%s</td><td class="n">%s–%s</td>'
+                   '<td class="n">%s</td><td class="n">%s-%s</td>'
                    '<td class="pos">%s</td></tr>'
                    % (e(r["protein"]), e(r["biomarker"]),
                       sig(r["anchor_uM"]),
@@ -346,7 +346,7 @@ def hero_strip(d):
         fill = {"green": "var(--good)", "yellow": "var(--warning)",
                 "red": "var(--critical)"}[c["light"]]
         op = ".32" if c["light"] == "red" else "1"
-        label = "%s / %s — %s" % (c["biomarker"], c["protein"], c["reason"])
+        label = "%s / %s - %s" % (c["biomarker"], c["protein"], c["reason"])
         out.append('<rect x="%.1f" y="0" width="%.1f" height="%.0f" rx="2.5" '
                    'fill="%s" fill-opacity="%s"><title>%s</title></rect>'
                    % (x, mw, h, fill, op, e(label[:150])))
@@ -484,8 +484,8 @@ def mechanism_figure(a):
         if bx <= gx <= bx + bw:
             out.append('<text class="tick" x="%.1f" y="%d" text-anchor="middle">'
                        '%s</text>' % (gx, by + bh + 18,
-                                      "1" if d == 0 else "10<tspan dy='-4' "
-                                      "font-size='8'>%d</tspan>" % d))
+                                      "10<tspan dy='-4' font-size='8'>"
+                                      "%d</tspan>" % d))
         d += 1
     out.append('<text class="axis-title" x="%.1f" y="%d" text-anchor="middle">'
                'resting cytoplasmic H₂O₂, µM</text>'
@@ -499,11 +499,15 @@ def mechanism_figure(a):
         pts.append("%.1f,%.1f" % (_logx(v, lo, hi, bx, bw), by + bh - bh * f))
     out.append('<polyline class="curve" points="%s"/>' % " ".join(pts))
 
+    # The rule stops at the curve rather than running the full height: at K the
+    # curve is at half by definition, so the top half of the line marked
+    # nothing and crossed the knockout's own label on its way past.
     kx = _logx(k, lo, hi, bx, bw)
-    out.append('<line x1="%.1f" y1="%d" x2="%.1f" y2="%d" stroke="var(--axis)" '
-               'stroke-dasharray="3 3"/>' % (kx, by, kx, by + bh))
-    out.append('<text class="tick" x="%.1f" y="%d" text-anchor="middle">K_oxyr</text>'
-               % (kx, by - 6))
+    ky = by + bh * 0.5
+    out.append('<line x1="%.1f" y1="%.1f" x2="%.1f" y2="%d" stroke="var(--axis)" '
+               'stroke-dasharray="3 3"/>' % (kx, ky, kx, by + bh))
+    out.append('<text class="tick" x="%.1f" y="%.1f" text-anchor="middle">'
+               'K = %s \u00b5M</text>' % (kx, ky - 8, num(k)))
 
     for key, act, col, lab in (
             ("resting_h2o2", "activation_wt", "var(--good)", "wild type"),
@@ -516,17 +520,21 @@ def mechanism_figure(a):
                    % (vx, vy, col, lab, num(a[key]), pct(a[act])))
         anchor = "start" if a[key] < k else "end"
         dx = 10 if anchor == "start" else -10
+        # a point near the top of the plot has no room above it for its own
+        # label, so the pair drops below the marker instead
+        high = a[act] > 0.6
+        dy1, dy2 = (20, 35) if high else (4, 19)
         out.append('<text class="ptlab" x="%.1f" y="%.1f" text-anchor="%s" '
-                   'fill="%s">%s</text>' % (vx + dx, vy + 4, anchor, col, e(lab)))
+                   'fill="%s">%s</text>' % (vx + dx, vy + dy1, anchor, col, e(lab)))
         out.append('<text class="ptsub" x="%.1f" y="%.1f" text-anchor="%s">'
                    '%s activated, %s headroom</text>'
-                   % (vx + dx, vy + 19, anchor, pct(a[act]),
+                   % (vx + dx, vy + dy2, anchor, pct(a[act]),
                       pct(a["headroom_wt" if key == "resting_h2o2"
                             else "headroom_knockout"])))
     out.append("</svg>")
     return ('<figure class="mechfig"><div class="figscroll">%s</div>'
             '<figcaption>Deleting the catalases and peroxidases does not remove '
-            'a competitor for the signal — it removes the drain. Resting '
+            'a competitor for the signal - it removes the drain. Resting '
             'peroxide climbs from %s to %s µM, past the OxyR half-activation '
             'point, and the reporter begins the assay already %s switched on '
             'with %s of its range left. That is why the knockout makes the fold '
@@ -662,7 +670,7 @@ def positioning_legend(rows):
     present = sorted({r["module_type"] for r in rows})
     if present == ["A"]:
         return ("Every constant plotted here is a K<sub>m</sub>: all of these are "
-                "type A modules. <b>No type B module appears at all</b> &mdash; "
+                "type A modules. <b>No type B module appears at all</b> - "
                 "the only one in the library with a published K<sub>d</sub> is "
                 "BetI, and choline has no clinical distribution to plot it "
                 "against. That gap in the data, not the chemistry, is what "
@@ -777,9 +785,9 @@ def panels_section(d):
                    '<th class="n">AUC range</th><th class="n">sens=spec</th>'
                    '<th>verdict</th></tr></thead><tbody>')
         for p in plist:
-            band = ("%s – %s" % (num(p["auc_worst"], 3), num(p["auc_best"], 3))
+            band = ("%s - %s" % (num(p["auc_worst"], 3), num(p["auc_best"], 3))
                     if p["size"] > 1 else num(p["auc_worst"], 3))
-            sens = ("%s – %s" % (pct(p["sens_worst"]), pct(p["sens_best"]))
+            sens = ("%s - %s" % (pct(p["sens_worst"]), pct(p["sens_best"]))
                     if p["size"] > 1 else pct(p["sens_worst"]))
             out.append('<tr class="v-%s"><td class="bm">%s</td><td class="n">%s</td>'
                        '<td class="n">%s</td><td class="why">%s</td></tr>'
@@ -811,7 +819,7 @@ def enzymes_section(d):
             out.append('<tr><td class="bm">%s</td><td>%s</td><td class="n">%s</td>'
                        '<td class="n">%s</td><td class="n">%s</td>'
                        '<td class="n">%s×</td></tr>'
-                       % (e(s["protein"]), e(s["organism"] or "—"),
+                       % (e(s["protein"]), e(s["organism"] or "-"),
                           num(s["kcat_s"]), num(s["km_uM"]),
                           num(s["efficiency"], 3), num(s["efficiency"] / lo, 3)))
         out.append("</tbody></table></div>")
@@ -822,7 +830,7 @@ def enzymes_section(d):
             out.append('<p class="aside">Catalytic efficiency spans %s× across '
                        'these enzymes; the device fold spans %s×. Below Km the '
                        'branch is first order in kcat/Km, so efficiency buys lower '
-                       'enzyme loading, not signal — the ceiling is set by the '
+                       'enzyme loading, not signal - the ceiling is set by the '
                        'cell’s own peroxide flux, which no enzyme moves.</p>'
                        % (num(spread, 3), num(max(folds) / min(folds), 3)))
     return "\n".join(out)
@@ -855,15 +863,15 @@ def gaps_section(d):
         # constant", not "kd_uM".
         need = " and ".join(FIELD.get(f, f) for f in m["missing"])
         syms = ", ".join(SYMBOL.get(f, f) for f in m["missing"])
-        out.append('<li><b>%s</b> — no one has published %s (%s) for '
+        out.append('<li><b>%s</b> - no one has published %s (%s) for '
                    '<b>%s</b>, so its response cannot be computed. Not estimated '
                    'from a similar protein.</li>'
                    % (e(m["biomarker"]), e(need), e(syms), e(m["protein"])))
     for b in g["no_clinical"]:
-        out.append('<li><b>%s</b> — a module exists but clinical.csv has no '
+        out.append('<li><b>%s</b> - a module exists but clinical.csv has no '
                    'usable distribution, so stage 1 cannot run.</li>' % e(b))
     for b in g["no_sensor"]:
-        out.append('<li><b>%s</b> — clinical data exists but no module in the '
+        out.append('<li><b>%s</b> - clinical data exists but no module in the '
                    'library recognises it.</li>' % e(b))
     out.append("</ul></div>")
 
@@ -875,7 +883,7 @@ def gaps_section(d):
                'skeleton instead of plugging into it. A different architecture, '
                'not a module.</p><ul class="gap">')
     for r in d["out_of_scope"]:
-        out.append('<li><b>%s</b> — %s, Kd %s µM</li>'
+        out.append('<li><b>%s</b> - %s, Kd %s µM</li>'
                    % (e(r["protein_name"]), e(r["biomarker"]), e(r["kd_uM"])))
     out.append("</ul></div></div>")
     return "\n".join(out)
@@ -926,7 +934,7 @@ SKELETON_SVG = """
   <circle cx="126" cy="42" r="6" fill="var(--surface-1)" stroke="var(--ink-2)" stroke-width="2"/>
   <circle cx="182" cy="74" r="6" fill="var(--surface-1)" stroke="var(--ink-2)" stroke-width="2"/>
   <text class="ps" x="126" y="196" text-anchor="middle">two fixed insertion sites</text>
-  <text class="ps" x="126" y="210" text-anchor="middle">— everything else never changes</text>
+  <text class="ps" x="126" y="210" text-anchor="middle">- everything else never changes</text>
 
   <line x1="206" y1="108" x2="262" y2="108" stroke="var(--axis)" stroke-width="2"/>
   <path d="M262 108 l-9 -4.5 v9 z" fill="var(--axis)"/>

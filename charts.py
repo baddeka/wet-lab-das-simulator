@@ -115,7 +115,7 @@ def compact(v, n=3):
     leaves 1 800, 1, 700, 0.1, 0.05, 26, which can be read down.
     """
     if v is None:
-        return "—"
+        return "-"
     if v == 0:
         return "0"
     a = abs(v)

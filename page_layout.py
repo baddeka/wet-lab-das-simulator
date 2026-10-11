@@ -134,13 +134,13 @@ class Doc(object):
         self.out.append(self.num.adopt(html))
         return self
 
-    def table(self, html, caption, missing=None):
+    def table(self, html, caption, missing=None, scroll=True):
         if not html:
             self.missing.append(missing or caption)
             self.out.append("<p class='empty'>%s</p>"
                             % e(missing or "No rows to show."))
             return self
-        self.out.append(self.num.table(html, caption))
+        self.out.append(self.num.table(html, caption, scroll=scroll))
         return self
 
     def cite(self, *dois):
@@ -217,7 +217,7 @@ def page(d):
     header = (
         "<header>\n<h1>A platform for biomarker detection,<br>not a sensor for "
         "one</h1>\n<p class='lede'>One plasmid skeleton that never changes "
-        "&mdash; origin, resistance, reporter, and two fixed insertion sites. "
+        "- origin, resistance, reporter, and two fixed insertion sites. "
         "Between them sits a module that recognises one biomarker. Another "
         "biomarker, another module, same skeleton.</p>\n%s\n"
         "<p class='sub'>Colorectal cancer stays as the worked example, not as "
@@ -234,8 +234,8 @@ def page(d):
     doc.sub("arch-skeleton", "One skeleton, two insertion sites")
     doc.p("Everything outside the two insertion sites is fixed: the origin, the "
           "resistance marker and the reporter never change between modules. "
-          "That is the whole claim of the design &mdash; a second biomarker is "
-          "a cloning job, not a redesign &mdash; and it is also the constraint "
+          "That is the whole claim of the design - a second biomarker is "
+          "a cloning job, not a redesign - and it is also the constraint "
           "that decides what counts as a module at all.")
     doc.figure(SKELETON_SVG,
                "The fixed skeleton and the two module types that plug into it. "
@@ -251,7 +251,7 @@ def page(d):
               "where no oxidase exists, and having both is what makes this an "
               "architecture rather than one device. A sensor that carries its "
               "own fluorophore is a third thing and is left out on purpose "
-              "&mdash; binding changes its fluorescence directly, with no "
+              "- binding changes its fluorescence directly, with no "
               "transcription and no reporter gene, so it would replace the "
               "skeleton instead of plugging into it."
               % (len(d["biomarkers"]),
@@ -263,7 +263,7 @@ def page(d):
                 "Two compartments, nothing fitted")
     doc.sub("model-objective", "What it has to answer")
     doc.p("The question is not whether the biomarker can make hydrogen "
-          "peroxide &mdash; it can &mdash; but whether that peroxide is "
+          "peroxide - it can - but whether that peroxide is "
           "audible over the peroxide <i>E.&nbsp;coli</i> makes anyway. So the "
           "model is built around a competition between two fluxes, and the "
           "quantity it reports is a ratio between two samples rather than an "
@@ -295,7 +295,7 @@ def page(d):
         ("[H₂O₂]<sub>cyt</sub>, [H₂O₂]<sub>med</sub>",
          "peroxide in the cytoplasm and in the medium, µM"),
         ("P<sub>endo</sub>",
-         "the cell's own cytoplasmic peroxide production, µM/s &mdash; the "
+         "the cell's own cytoplasmic peroxide production, µM/s - the "
          "competitor, and the denominator of the whole design"),
         ("v<sub>cyt</sub>, v<sub>med</sub>",
          "enzymatic production, in whichever compartment the oxidase sits"),
@@ -307,7 +307,7 @@ def page(d):
          "the sample matrix contributes"),
         ("φ", "fraction of the assay volume that is cytoplasm"),
     ]))
-    doc.p("The enzymatic term is Michaelis&ndash;Menten in the analyte, which "
+    doc.p("The enzymatic term is Michaelis-Menten in the analyte, which "
           "is why a module's K<sub>m</sub> matters at all: it decides whether "
           "the branch is first order in the biomarker or already saturated.")
     doc.raw(eq("v = %s"
@@ -370,7 +370,7 @@ def page(d):
           "permeability that gives k<sub>mem</sub> &asymp; %s s&#8315;&#185;. "
           "OxyR's half-activation point comes from an in-vitro titration%s. "
           "The check is that these reproduce a quantity none of them was set "
-          "from &mdash; the medium-to-cytoplasm gradient, which comes out at "
+          "from - the medium-to-cytoplasm gradient, which comes out at "
           "<code>%s&times;</code> against a measured value of about nine."
           % (C(SEAVER), num(a["P_endo"]), num(a["resting_h2o2"]),
              num(a["k_scav"]), num(a["k_mem"]), C(ASLUND),
@@ -378,7 +378,7 @@ def page(d):
     doc.table(parameters_table(d, page_parts.PHYSICAL, doc.refs),
               "Every constant the model runs on, with what fixed it. Two are "
               "measurements, two are derived from those measurements, and eight "
-              "are assumptions &mdash; which is the honest shape of this "
+              "are assumptions - which is the honest shape of this "
               "chassis and the reason section&nbsp;7 varies all of them.")
     doc.raw(kind_key())
     doc.table(scenario_table(d),
@@ -419,7 +419,7 @@ def page(d):
                label="the closed form", where=[
         ("S<sub>0</sub>", "analyte delivered into the assay"),
         ("T", "read window, s"),
-        ("S/B", "signal over the blank &mdash; not the fold between a healthy "
+        ("S/B", "signal over the blank - not the fold between a healthy "
                 "and a cancer sample, which is what every verdict on this page "
                 "uses"),
     ]))
@@ -473,7 +473,7 @@ def page(d):
                 "Two gates, in order, and every rejection published")
     doc.sub("screen-gates", "Two gates")
     doc.p("<b>Stage&nbsp;1</b> asks whether the published cohorts separate at "
-          "all &mdash; from the reported AUC where one exists, otherwise from "
+          "all - from the reported AUC where one exists, otherwise from "
           "Welch's t and Cohen's d rebuilt from the summary statistics. A "
           "biomarker that fails here is not worth a module however good the "
           "protein. <b>Stage&nbsp;2</b> asks whether a module could read that "
@@ -541,14 +541,21 @@ def page(d):
                "Each module's constant against the clinical range of its "
                "analyte. The diamond is the constant, the bar is the published "
                "healthy-to-cancer span. Sitting far below the constant is "
-               "survivable &mdash; the branch is simply first order there "
-               "&mdash; but it costs enzyme loading and signal; sitting far "
+               "survivable - the branch is simply first order there "
+               "- but it costs enzyme loading and signal; sitting far "
                "above means saturation, which no amount of sample preparation "
                "recovers.",
                note=positioning_legend(d["positioning"]), scroll=False)
 
     doc.sub("screen-library", "The library")
-    doc.raw(library_table(d))
+    doc.table(library_table(d), scroll=False, caption=
+              "Every module against every clinical study it could be measured "
+              "against: %d pairs, of which %d pass outright and %d pass once "
+              "the sample is concentrated. Each row carries the reason for its "
+              "verdict underneath it, and the %d rejections are one click away "
+              "rather than deleted - they are the result, not the leftovers."
+              % (len(d["candidates"]), d["counts"].get("green", 0),
+                 d["counts"].get("yellow", 0), d["counts"].get("red", 0)))
 
     # ============================================== 4. fold to a diagnosis
     doc.section("performance", "From a fold change to a diagnosis",
@@ -556,7 +563,7 @@ def page(d):
     doc.sub("perf-why", "Compression, and the noise underneath it")
     doc.p("Two things stand between a fold change and a diagnostic. The device "
           "does not report the analyte, it reports fluorescence, and the chain "
-          "between them is sublinear &mdash; so the clinical difference arrives "
+          "between them is sublinear - so the clinical difference arrives "
           "squeezed. The biological spread is squeezed by exactly the same "
           "factor, which is why the squeeze cannot be undone by rescaling "
           "afterwards. Underneath sits the reader's own error.")
@@ -576,7 +583,7 @@ def page(d):
          "spread"),
         ("CV, n",
          "the reader's relative error per measurement and the number of "
-         "replicates &mdash; %s and %d here, giving a limit of detection of "
+         "replicates - %s and %d here, giving a limit of detection of "
          "%s&times;" % (pct(t["cv_reader"]), int(t["n_rep"]),
                         num(t["fold_needed"], 4))),
         ("Φ", "the standard normal distribution function"),
@@ -627,19 +634,23 @@ def page(d):
                "these papers publish.",
                missing="No module reaches the performance stage, so there is "
                        "no ROC curve to draw.")
+    doc.sub("perf-cost", "What the device costs, and what it cannot buy")
+    doc.p(_compression_cancels(an)
+          or "Not enough modules reach the performance stage to compare the "
+             "clinic with the reader.")
     doc.figure(figures.auc_ladder(d),
-               "What each module gives up between the cohort and the reader. "
-               "The diamond is the cohorts' own separation, the circle is the "
-               "device's, and c is the fraction of the log difference that "
-               "survived. Note how little the ranking changes: compression "
-               "costs every module roughly the same, so the clinical "
-               "separation is what decides the order.",
+               "The cohorts' own separation against the device's, module by "
+               "module. The two markers nearly coincide, and that is the "
+               "result: compression moves the signal and the spread together, "
+               "so it cancels, and only the reader's noise is left to cost "
+               "anything. c is the fraction of the log difference that "
+               "survives to the reader.",
                missing="Fewer than two modules reach the performance stage.")
 
     # ============================================================= 5. panels
     doc.section("panels", "Panels",
                 "One marker rarely gives usable specificity")
-    doc.p("Urinary polyamines rise in colorectal cancer &mdash; and also in "
+    doc.p("Urinary polyamines rise in colorectal cancer - and also in "
           "benign gastrointestinal disease, which is exactly what costs the "
           "published assays their specificity. Reading several modules at once "
           "is the way out, and against a fixed skeleton that is a cloning job "
@@ -692,9 +703,9 @@ def page(d):
                    "the fold each one delivers. Right: every type A enzyme in "
                    "the library, against the loading each needs to turn over "
                    "95% of its analyte inside the read. The x axis is the same "
-                   "on both. A better enzyme costs less enzyme &mdash; the "
+                   "on both. A better enzyme costs less enzyme - the "
                    "dashed line is the inverse proportionality it should follow "
-                   "&mdash; and it does not produce more signal, because the "
+                   "- and it does not produce more signal, because the "
                    "ceiling is the cell&rsquo;s own peroxide flux and no enzyme "
                    "moves that.",
                    missing="Fewer than two type A enzymes in the library have a "
@@ -708,7 +719,7 @@ def page(d):
     tor = an.get("tornado")
     if tor:
         doc.p("Every input halved and doubled in turn, with the whole chain "
-              "re-run each time &mdash; fold, compression, propagation &mdash; "
+              "re-run each time - fold, compression, propagation - "
               "so the bars are movements in the quantity the verdict rests on "
               "rather than in an intermediate. The baseline is AUC %s for %s "
               "read by %s."
@@ -817,12 +828,46 @@ def _scaling_verdict(an):
         "reading early, on the strength of the &#966; and T terms above. "
         "Neither term survives contact with the full model: cell density "
         "barely moves signal over background at all, and read time moves it "
-        "the other way. Section&nbsp;7 agrees independently &mdash; a longer "
+        "the other way. Section&nbsp;7 agrees independently - a longer "
         "read and a higher density both <i>raise</i> the screen's AUC. The "
         "recommendation to lower P<sub>endo</sub> by assaying non-growing "
         "cells is untouched by this, and remains the one lever the algebra and "
         "the model agree on.")
     return out
+
+
+def _compression_cancels(an):
+    """State the result the AUC comparison actually shows.
+
+    The figure beside this was captioned as if the device gave something up at
+    every module. It does not, and the reason is worth a paragraph: the
+    compression factor multiplies the clinical difference and the clinical
+    spread alike, so it cancels out of their ratio. Only the reader's own noise
+    is left, added in quadrature to an already-squeezed spread.
+    """
+    sep = an.get("separation") or []
+    rows = [s for s in sep if s.get("clinical") and s.get("device")]
+    if len(rows) < 2:
+        return None
+    shares, gaps = [], []
+    for s in rows:
+        bio = s["device"]["compression"] * s["clinical"]["sd_healthy"]
+        if bio > 0:
+            shares.append(s["device"]["reader_log_sd"] / bio)
+        gaps.append(abs(s["clinical"]["auc"] - s["device"]["auc"]))
+    if not shares:
+        return None
+    return ("Compression is not the loss it looks like. It multiplies the "
+            "clinical difference and the clinical spread by the same factor, "
+            "so it cancels out of the ratio between them, and what the device "
+            "actually adds is the reader's own noise alone. Across these "
+            "modules that noise is %s to %s of the already-squeezed biological "
+            "spread, and the AUC at the reader lands within <b>%s</b> of the "
+            "cohorts' own. The consequence runs both ways: a module gives up "
+            "almost nothing in translation, and it can never be better than "
+            "the biomarker it reads. Everything that decides this screen was "
+            "decided in the clinic, before any module existed."
+            % (pct(min(shares)), pct(max(shares)), _dec(max(gaps))))
 
 
 def _interval_note(an):
@@ -871,7 +916,7 @@ def _tornado_prose(tor):
     if kin:
         out += ("The module's own measured kinetics are at the bottom of the "
                 "list: %s. That is the same conclusion the enzyme comparison "
-                "reaches from the other direction &mdash; a hundred-fold spread "
+                "reaches from the other direction - a hundred-fold spread "
                 "in catalytic efficiency buys almost nothing, because the "
                 "ceiling is the cell's own peroxide flux and no enzyme moves "
                 "it. "

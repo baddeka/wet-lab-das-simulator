@@ -1,6 +1,6 @@
 # Biosensor module platform
 
-One plasmid skeleton that never changes — origin, resistance, reporter, and two fixed
+One plasmid skeleton that never changes - origin, resistance, reporter, and two fixed
 insertion sites. Between them sits a module that recognises one biomarker. Another
 biomarker, another module, same skeleton. Colorectal cancer stays as the worked example,
 not as the project.
@@ -29,7 +29,7 @@ element. **Out:** passes or not, the sample concentration needed, whether a scav
 knockout helps, and the sensitivity and specificity that follow at our own limit of
 detection.
 
-Two gates, in order. **Stage 1** asks whether the cohorts separate at all — from the
+Two gates, in order. **Stage 1** asks whether the cohorts separate at all - from the
 reported AUC where one exists, otherwise from Welch's t and Cohen's d rebuilt from the
 summary statistics. **Stage 2** asks whether a module could read that difference, and runs
 only on what survived. Rejections are reported with the stage that produced them;
@@ -39,7 +39,7 @@ currently 45 of 52 module × study pairs fail, and those rows are the point.
 
 A single metabolite rarely gives usable specificity, so the model also scores
 combinations. How much a panel gains depends on how its markers co-vary, which needs them
-measured in the same patients — and no source in the library reports that. Every panel is
+measured in the same patients - and no source in the library reports that. Every panel is
 therefore a **range** over the whole plausible correlation span, never a point estimate,
 and the verdict comes from the worst point of the range.
 
@@ -68,7 +68,7 @@ python tests/test_regression.py # the frozen two-compartment baseline
 Small molecules recognised by an oxidase or a metabolite-binding transcription factor.
 Protein markers do not fit. Every module shares one ceiling on sensitivity, set by the
 host's own peroxide flux rather than by any module. **No module has been validated
-experimentally** — this is a designed and modelled platform, not a working one.
+experimentally** - this is a designed and modelled platform, not a working one.
 
 ## What the model says
 
@@ -78,7 +78,7 @@ The intuitive design fails, and it fails for a different reason than it first ap
   in its own cytoplasm. At a conventional working density of OD₆₀₀ = 1, the biomarker
   contributes under 1 % of that. The OxyR trigger point was never the binding constraint.
 - **Signal-to-background is governed by `S₀ / (φ · P_endo · T)`.** The scavenging rate
-  constant cancels — it divides signal and background identically. So does the enzyme,
+  constant cancels - it divides signal and background identically. So does the enzyme,
   provided conversion completes within the incubation.
 - **Deleting the scavengers makes it worse.** A `ΔkatG ΔkatE ΔahpCF` background raises
   resting cytoplasmic H₂O₂ from 0.02 µM to ~2.8 µM, against an OxyR half-activation point
@@ -92,8 +92,8 @@ The intuitive design fails, and it fails for a different reason than it first ap
   creatinine spans 4×. A cancer-positive sample in dilute urine presents *less* DAS than a
   healthy sample in concentrated urine. Creatinine has to be measured in parallel.
 
-Delivering a properly quoted net 6–8× of cleaned-up sample, at OD₆₀₀ ≈ 0.05, on non-growing
-cells, read at 30 min recovers roughly 500× and brings the fold change to ≈ 1.20 — resolvable
+Delivering a properly quoted net 6-8× of cleaned-up sample, at OD₆₀₀ ≈ 0.05, on non-growing
+cells, read at 30 min recovers roughly 500× and brings the fold change to ≈ 1.20 - resolvable
 by a reader with a 5 % CV in triplicate.
 
 ## Parameters and their anchors
@@ -120,7 +120,7 @@ gradient in wild-type cells. The model gives 8.8.
 No constant is written into the page any more. `build_site.py` reads `data/platform.csv`,
 `data/scenarios.csv`, `data/sensors.csv` and `data/web_presets.csv` and injects them into
 `index.html` as a single JSON block; the page reads its starting state from that block and
-nothing else. To change what the published page computes, edit a CSV and rebuild — never a
+nothing else. To change what the published page computes, edit a CSV and rebuild - never a
 number in `site.html`. `tests/test_site.py` fails if the two disagree, which is how the
 `Km` of 83 µM was able to outlive its own correction before.
 
@@ -140,9 +140,9 @@ python screen.py                # the module screen
 
 Three quantities are unmeasured and any of them can close the branch:
 
-1. whether DAS crosses the inner membrane at all — native Pot transporters handle
+1. whether DAS crosses the inner membrane at all - native Pot transporters handle
    N-acetylated polyamines poorly, and the cytoplasmic architecture fails outright without it;
-2. how selective the oxidase is against the more abundant urinary acetylpolyamines — a
+2. how selective the oxidase is against the more abundant urinary acetylpolyamines - a
    selectivity of 10 destroys the measurement, 100 is workable, 1000 is comfortable;
 3. whether creatinine can be measured in parallel.
 
