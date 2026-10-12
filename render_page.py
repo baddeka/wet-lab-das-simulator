@@ -993,6 +993,38 @@ JS = """
   if (M) M.addEventListener('click', function(){ open = !open; apply(); });
   apply();
 
+  // one tooltip for every mark that carries a reading. The native <title> is
+  // still there underneath for print, for screen readers and for no-JS; this
+  // only replaces the second-long wait and the operating system's styling.
+  var tipEl = null;
+  function showTip(e){
+    var t = e.currentTarget.getAttribute('data-tip');
+    if (!t) return;
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.className = 'tip';
+      document.body.appendChild(tipEl);
+    }
+    tipEl.textContent = t;
+    tipEl.style.display = 'block';
+    moveTip(e);
+  }
+  function moveTip(e){
+    if (!tipEl) return;
+    var pad = 14, w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    var x = e.clientX + pad, y = e.clientY - h - pad;
+    if (x + w > innerWidth - 8) x = e.clientX - w - pad;
+    if (y < 8) y = e.clientY + pad;
+    tipEl.style.left = x + 'px';
+    tipEl.style.top = y + 'px';
+  }
+  function hideTip(){ if (tipEl) tipEl.style.display = 'none'; }
+  document.querySelectorAll('[data-tip]').forEach(function(n){
+    n.addEventListener('mouseenter', showTip);
+    n.addEventListener('mousemove', moveTip);
+    n.addEventListener('mouseleave', hideTip);
+  });
+
   // mark the section the reader is in
   var links = [].slice.call(document.querySelectorAll('.rail a')),
       secs = links.map(function(a){ return document.getElementById(a.dataset.sec); });
@@ -1008,3 +1040,34 @@ JS = """
   }
 })();
 """
+
+
+def positioning_table(rows):
+    """The positioning numbers as a table.
+
+    Two jobs: the accessibility fallback the chart needs, and the readable
+    version on a phone, where the figure stops shrinking and scrolls sideways
+    instead. Split out when the chart itself moved onto charts.py, so the one
+    that draws and the one that tabulates no longer have to be the same
+    function.
+    """
+    rows = [r for r in rows if r.get("anchor_uM") and r.get("healthy_uM")
+            and r.get("sick_uM")]
+    if not rows:
+        return ""
+    anchors = sorted({r["anchor_name"] for r in rows})
+    head = " / ".join(anchors) if len(anchors) > 1 else anchors[0]
+    tab = ['<table class="posdata"><thead><tr><th>module</th><th>biomarker</th>'
+           '<th class="n">%s<span class="u">, µM</span></th>'
+           '<th class="n">clinical range<span class="u">, µM</span></th>'
+           '<th>analyte sits</th></tr></thead><tbody>' % head]
+    for r in rows:
+        tab.append('<tr><td class="bm">%s</td><td>%s</td>'
+                   '<td class="n">%s</td><td class="n">%s-%s</td>'
+                   '<td class="pos">%s</td></tr>'
+                   % (e(r["protein"]), e(r["biomarker"]),
+                      sig(r["anchor_uM"]),
+                      sig(r["healthy_uM"]), sig(r["sick_uM"]),
+                      position_word(r["ratio_to_anchor"])))
+    tab.append("</tbody></table>")
+    return ('<div class="scroll">%s</div>' % "".join(tab))

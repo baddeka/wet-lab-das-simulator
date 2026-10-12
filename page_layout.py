@@ -19,7 +19,7 @@ from page_parts import Refs, eq, frac, kind_key, parameters_table, scenario_tabl
 from render_page import (CSS, FONTS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
                          enzymes_section, gaps_section, hero_strip,
                          library_table, limits_callout, mechanism_figure, num,
-                         panels_section, pct, positioning_chart,
+                         panels_section, pct, positioning_table,
                          positioning_legend, sig, stat_tiles)
 
 
@@ -73,6 +73,12 @@ class Doc(object):
         self.n1 = 0
         self.n2 = 0
         self.missing = []
+        # Figure numbers are only known once the figure is emitted, and the
+        # prose that points at one usually comes first. So a reference is
+        # written as a token and resolved in body(); a token for a figure that
+        # never got drawn resolves to its fallback wording rather than to a
+        # dangling number.
+        self.names = {}
 
     # ---- structure
     def section(self, anchor, title, sub=None):
@@ -116,16 +122,25 @@ class Doc(object):
         return self
 
     # ---- numbered figures and tables
-    def figure(self, svg, caption, note=None, scroll=True, missing=None):
+    def figure(self, svg, caption, note=None, scroll=True, missing=None,
+               name=None):
         """Number and caption a figure, or say what was missing instead."""
         if not svg:
             self.missing.append(missing or caption)
+            if name:
+                self.names[name] = None
             self.out.append("<p class='empty'>%s</p>"
                             % e(missing or "This figure could not be drawn from "
                                            "the data available."))
             return self
         self.out.append(self.num.figure(svg, caption, note=note, scroll=scroll))
+        if name:
+            self.names[name] = ("Figure", self.num.fig, "fig%d" % self.num.fig)
         return self
+
+    def ref(self, name, fallback="below"):
+        """A reference to a numbered figure or table, resolved in body()."""
+        return "\x01" + name + "|" + fallback + "\x01"
 
     def adopt(self, html, caption_prefix=True):
         """Number a figure that already built its own caption."""
@@ -134,13 +149,17 @@ class Doc(object):
         self.out.append(self.num.adopt(html))
         return self
 
-    def table(self, html, caption, missing=None, scroll=True):
+    def table(self, html, caption, missing=None, scroll=True, name=None):
         if not html:
             self.missing.append(missing or caption)
+            if name:
+                self.names[name] = None
             self.out.append("<p class='empty'>%s</p>"
                             % e(missing or "No rows to show."))
             return self
         self.out.append(self.num.table(html, caption, scroll=scroll))
+        if name:
+            self.names[name] = ("Table", self.num.tab, "tab%d" % self.num.tab)
         return self
 
     def cite(self, *dois):
@@ -167,7 +186,16 @@ class Doc(object):
         return "".join(out)
 
     def body(self):
-        return "\n".join(self.out + (["</section>"] if self.n1 else []))
+        html = "\n".join(self.out + (["</section>"] if self.n1 else []))
+        return re.sub("\x01([^|\x01]+)\\|([^\x01]*)\x01", self._resolve, html)
+
+    def _resolve(self, m):
+        got = self.names.get(m.group(1))
+        if not got:
+            return m.group(2)
+        kind, number, anchor = got
+        return ("<a class='xref' href='#%s'>%s&nbsp;%d</a>"
+                % (anchor, kind, number))
 
 
 # ----------------------------------------------------------------- the page
@@ -225,7 +253,12 @@ def page(d):
         "from %s and written into the markup at build time; the page itself "
         "calculates nothing.</p>\n</header>" % (lede2, e(d["generated_from"])))
 
-    doc.adopt(hero_strip(d))
+    doc.figure(figures.library_map(d),
+               "Every module in the library measured against every clinical "
+               "study it could be measured against, grouped by biomarker. The "
+               "passes are not spread thinly across the library: they sit on "
+               "one analyte. Hover any mark for the pair behind it.",
+               missing="No candidate pairs were screened.", name="map")
     doc.raw(stat_tiles(d))
 
     # ===================================================== 1. the platform
@@ -243,7 +276,7 @@ def page(d):
                "read it; type B binds the analyte with a transcription factor "
                "and drives the promoter directly. Both hand their signal to the "
                "same reporter, which is what makes them interchangeable.",
-               scroll=False)
+               scroll=False, name="skeleton")
     doc.sub("arch-why-two", "Why there are two module types")
     doc.aside("Type A exists for only a handful of analytes, because oxidases "
               "are scarce: of %d biomarkers in this library, %d have a "
@@ -379,7 +412,7 @@ def page(d):
               "Every constant the model runs on, with what fixed it. Two are "
               "measurements, two are derived from those measurements, and eight "
               "are assumptions - which is the honest shape of this "
-              "chassis and the reason section&nbsp;7 varies all of them.")
+              "chassis and the reason section&nbsp;7 varies all of them.", name="constants")
     doc.raw(kind_key())
     doc.table(scenario_table(d),
               "The operating point. These are choices about how the assay is "
@@ -392,9 +425,10 @@ def page(d):
           "the activation curve rather than making it more sensitive. At the "
           "wild-type rate the reporter sits %s activated, leaving %s of its "
           "range for the analyte to use. In a catalase and peroxidase triple "
-          "knockout it starts at %s, with %s left."
+          "knockout it starts at %s, with %s left (%s)."
           % (pct(a["activation_wt"]), pct(a["headroom_wt"]),
-             pct(a["activation_knockout"]), pct(a["headroom_knockout"])))
+             pct(a["activation_knockout"]), pct(a["headroom_knockout"]),
+             doc.ref("oxyr", "see below")))
     doc.figure(figures.oxyr(d),
                "OxyR activation against resting cytoplasmic peroxide, with each "
                "strain's starting point marked. The knockout is not more "
@@ -405,7 +439,7 @@ def page(d):
                "used to detect a bolus applied from outside against a "
                "background the experimenter controls.",
                missing="The OxyR curve needs the chassis constants, which are "
-                       "absent from the exported data.")
+                       "absent from the exported data.", name="oxyr")
     doc.adopt(mechanism_figure(a))
 
     doc.sub("model-closedform", "What the closed form gets right, and what it does not")
@@ -427,7 +461,8 @@ def page(d):
           "1&#8201;/&#8201;&#966;, as 1&#8201;/&#8201;P<sub>endo</sub> and as "
           "1&#8201;/&#8201;T, and that the scavenging rate cancels out "
           "entirely. Each of those is a number the full model can be asked for "
-          "directly, by moving one parameter and measuring the slope.")
+          "directly, by moving one parameter and measuring the slope (%s)."
+          % doc.ref("scaling", "see below"))
     doc.figure(figures.scaling(d),
                "The exponent the closed form predicts against the exponent the "
                "full model actually obeys, measured as a central difference in "
@@ -437,7 +472,7 @@ def page(d):
                "periplasmic diacetylspermine reference the expression was first "
                "derived for.",
                missing="The scaling check needs the model re-run, and no result "
-                       "is present in the exported data.")
+                       "is present in the exported data.", name="scaling")
 
     scal = _scaling_verdict(an)
     if scal:
@@ -451,10 +486,10 @@ def page(d):
               "At the %s&#8201;s this screen uses, the best module reaches "
               "%s&times;. It is still climbing there: the maximum is "
               "%s&times; at %s&#8201;s, which is %.1f&times; the configured "
-              "window."
+              "window (%s)."
               % (num(tc["T_read"]), num(tc["fold_at_T"], 3),
                  num(tc["fold_peak"], 3), num(tc["t_peak"]),
-                 tc["peak_over_T"]))
+                 tc["peak_over_T"], doc.ref("window", "see below")))
     doc.figure(figures.time_course(d),
                "Above: the peroxide pulse in the cytoplasm for a cancer "
                "sample, a healthy sample and a blank, against the OxyR "
@@ -466,7 +501,7 @@ def page(d):
                     "accumulating in both arms alike, which is why there is a "
                     "maximum at all.",
                missing="The time course needs a type A module with a clinical "
-                       "level, and none is present in the exported data.")
+                       "level, and none is present in the exported data.", name="window")
 
     # ========================================================= 3. the screen
     doc.section("screen", "The screen",
@@ -489,8 +524,9 @@ def page(d):
     doc.p("%d published cohorts, %d of which report an effect size this "
           "pipeline can place on a common scale. The interval matters as much "
           "as the point: several of these studies are small enough that a "
-          "large effect and no effect are both inside it."
-          % (len(d["studies"]), len(an.get("effect_sizes") or [])))
+          "large effect and no effect are both inside it (%s)."
+          % (len(d["studies"]), len(an.get("effect_sizes") or []),
+             doc.ref("forest", "see below")))
     doc.figure(figures.effect_sizes(d),
                "Effect size with its 95%% interval for every cohort that reports "
                "enough to compute one, grouped by biomarker and coloured by "
@@ -499,7 +535,7 @@ def page(d):
                "real, and is not something this platform can build on. %s"
                % _interval_note(an),
                missing="No cohort in clinical.csv reports an effect size this "
-                       "pipeline can compute.")
+                       "pipeline can compute.", name="forest")
 
     doc.sub("screen-check", "Can the summary-statistics route be trusted")
     rec = an.get("reconstruction") or {}
@@ -510,9 +546,9 @@ def page(d):
               "%d studies report both their own AUC and enough statistics to "
               "rebuild it, which makes the assumption testable on them. The "
               "rebuilt value runs %s AUC points high on average, and %s at "
-              "worst."
+              "worst (%s)."
               % (rec["n"], _dec(abs(rec["mean_bias"])),
-                 _dec(abs(rec["worst"]))))
+                 _dec(abs(rec["worst"])), doc.ref("recon", "see below")))
     doc.figure(figures.reconstruction(d),
                "The AUC this pipeline rebuilds from summary statistics against "
                "the AUC the same paper reports from its own ROC analysis. "
@@ -521,7 +557,7 @@ def page(d):
                note=_recon_note(rec),
                missing="No study reports both an AUC and a usable spread, so "
                        "the statistical route cannot be checked against "
-                       "anything.")
+                       "anything.", name="recon")
     if rec.get("rows"):
         doc.flag("what this means for every AUC on this page",
                  "The screen's separations are <b>upper bounds</b>, not "
@@ -536,8 +572,10 @@ def page(d):
     doc.p("A module reads a patient difference best when its Michaelis or "
           "dissociation constant sits inside the clinical range. The distance "
           "between the two predicts the verdict better than anything else in "
-          "the screen.")
-    doc.figure(positioning_chart(d["positioning"]),
+          "the screen (%s), and it is what sends most of %s to the rejected "
+          "pile." % (doc.ref("positioning", "see below"),
+                     doc.ref("library", "the screen table")))
+    doc.figure(figures.positioning(d),
                "Each module's constant against the clinical range of its "
                "analyte. The diamond is the constant, the bar is the published "
                "healthy-to-cancer span. Sitting far below the constant is "
@@ -545,10 +583,11 @@ def page(d):
                "- but it costs enzyme loading and signal; sitting far "
                "above means saturation, which no amount of sample preparation "
                "recovers.",
-               note=positioning_legend(d["positioning"]), scroll=False)
+               note=positioning_legend(d["positioning"]), name="positioning")
+    doc.raw(positioning_table(d["positioning"]))
 
     doc.sub("screen-library", "The library")
-    doc.table(library_table(d), scroll=False, caption=
+    doc.table(library_table(d), scroll=False, name="library", caption=
               "Every module against every clinical study it could be measured "
               "against: %d pairs, of which %d pass outright and %d pass once "
               "the sample is concentrated. Each row carries the reason for its "
@@ -601,9 +640,10 @@ def page(d):
               "the other gives the module's whole response. The two clinical "
               "levels are %s and %s &#181;M; the chord between them has slope "
               "%s in log-log, and that slope <i>is</i> the compression the "
-              "propagation above uses."
+              "propagation above uses (%s)."
               % (num(dr["healthy_uM"], 3), num(dr["sick_uM"], 3),
-                 num(dr["slope_chord"], 3)))
+                 num(dr["slope_chord"], 3),
+                 doc.ref("transfer", "see below")))
     doc.figure(figures.dose_response(d),
                "The best module's reporter output against analyte "
                "concentration, relative to the healthy sample. The shaded band "
@@ -613,7 +653,7 @@ def page(d):
                "resolve. Both axes are logarithmic, so a straight line is a "
                "power law.",
                missing="The transfer function needs a module with two clinical "
-                       "levels, and none is present in the exported data.")
+                       "levels, and none is present in the exported data.", name="transfer")
 
     doc.sub("perf-cohorts", "What the reader can tell apart")
     doc.figure(figures.distributions(d),
@@ -624,7 +664,7 @@ def page(d):
                "cancer patients reading below. The overlap between the curves "
                "is what an AUC summarises in one number.",
                missing="No module has both a device fold and a published "
-                       "spread, so no distribution can be drawn.")
+                       "spread, so no distribution can be drawn.", name="cohorts")
     doc.figure(figures.roc(d),
                "ROC curves before and after the device. The dashed curve is "
                "what the published cohorts separate on their own; the solid "
@@ -633,7 +673,7 @@ def page(d):
                "to patient-level data, because patient-level data is not what "
                "these papers publish.",
                missing="No module reaches the performance stage, so there is "
-                       "no ROC curve to draw.")
+                       "no ROC curve to draw.", name="roc")
     doc.sub("perf-cost", "What the device costs, and what it cannot buy")
     doc.p(_compression_cancels(an)
           or "Not enough modules reach the performance stage to compare the "
@@ -645,7 +685,7 @@ def page(d):
                "so it cancels, and only the reader's noise is left to cost "
                "anything. c is the fraction of the log difference that "
                "survives to the reader.",
-               missing="Fewer than two modules reach the performance stage.")
+               missing="Fewer than two modules reach the performance stage.", name="ladder")
 
     # ============================================================= 5. panels
     doc.section("panels", "Panels",
@@ -688,7 +728,7 @@ def page(d):
                "to the right is the suppressor effect, and it is not something "
                "to design around.",
                missing="No cancer has two modules that both clear the screen, "
-                       "so there is no panel curve to draw.")
+                       "so there is no panel curve to draw.", name="panelrho")
     doc.table(panels_section(d),
               "Every panel the screen can form, with the range its unmeasured "
               "correlation allows and the verdict taken from the worst end.")
@@ -709,7 +749,7 @@ def page(d):
                    "ceiling is the cell&rsquo;s own peroxide flux and no enzyme "
                    "moves that.",
                    missing="Fewer than two type A enzymes in the library have a "
-                           "catalytic efficiency.")
+                           "catalytic efficiency.", name="enzymes")
         doc.table(enz, "The published oxidases for each analyte that has more "
                        "than one, with the efficiency spread between them.")
 
@@ -735,7 +775,7 @@ def page(d):
                "measured.",
                note=_tornado_note(tor, t),
                missing="The sensitivity analysis needs a module that reaches "
-                       "the performance stage.")
+                       "the performance stage.", name="tornado")
     if tor:
         doc.aside(_tornado_prose(tor))
 

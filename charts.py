@@ -27,6 +27,19 @@ def esc(s):
             .replace(">", "&gt;").replace('"', "&quot;"))
 
 
+def tip(text):
+    """Markup for a hover readout: a native title and a styled one.
+
+    The <title> works with no JavaScript, in print preview and for a screen
+    reader; the data attribute is what the page's own tooltip reads, because the
+    native one waits a second and arrives in the operating system's styling.
+    Both carry the same string, so they cannot disagree.
+    """
+    if not text:
+        return "", ""
+    return " data-tip='%s'" % esc(text), "<title>%s</title>" % esc(text)
+
+
 def _dash(d):
     """A dash pattern, or nothing at all - never the string 'None'.
 
@@ -372,16 +385,40 @@ class Axes(object):
 
     # ---- marks
     def line(self, pts, color="var(--series-a)", width=2.0, dash=None,
-             opacity=None, clip=True):
+             opacity=None, clip=True, tip=None):
         d = self._d(pts, clip)
         if not d:
             return self
+        at, ti = globals()["tip"](tip)
         self.marks.append(
             "<path d='%s' fill='none' stroke='%s' stroke-width='%g' "
-            "stroke-linecap='round' stroke-linejoin='round'%s%s/>"
+            "stroke-linecap='round' stroke-linejoin='round'%s%s%s>%s</path>"
             % (d, color, width,
                " stroke-dasharray='%s'" % dash if dash else "",
-               " opacity='%g'" % opacity if opacity is not None else ""))
+               " opacity='%g'" % opacity if opacity is not None else "",
+               at, ti))
+        return self
+
+    def hover_along(self, pts, label, every=None, r=9):
+        """Invisible targets along a curve, so a value can be read off it.
+
+        A drawn line is two pixels wide and a curve is not a thing anyone can
+        point at. These are transparent circles on the path - wide enough to
+        hit, sampled rather than one per point, each carrying the reading at
+        that place.
+        """
+        usable = [(vx, vy) for vx, vy in pts if vx is not None and vy is not None]
+        if not usable:
+            return self
+        every = every or max(1, len(usable) // 18)
+        for vx, vy in usable[::every]:
+            px, py = self.x(vx), self.y(vy)
+            if not self.inside(px, py):
+                continue
+            at, ti = globals()["tip"](label(vx, vy))
+            self.marks.append("<circle cx='%.1f' cy='%.1f' r='%g' fill='none' "
+                              "pointer-events='all'%s>%s</circle>"
+                              % (px, py, r, at, ti))
         return self
 
     def area(self, pts, base, color="var(--series-a)", opacity=0.13, clip=True):
@@ -410,22 +447,26 @@ class Axes(object):
         return "".join(out)
 
     def dot(self, vx, vy, r=4.0, color="var(--series-a)", ring=True,
-            shape="circle"):
+            shape="circle", tip=None):
         px, py = self.x(vx), self.y(vy)
         ringattr = (" stroke='var(--surface-1)' stroke-width='2'" if ring else "")
+        at, ti = globals()["tip"](tip)
         if shape == "diamond":
             s = r * 1.25
             self.marks.append(
                 "<path d='M%.1f,%.1f L%.1f,%.1f L%.1f,%.1f L%.1f,%.1f Z' "
-                "fill='%s'%s/>" % (px, py - s, px + s, py, px, py + s,
-                                   px - s, py, color, ringattr))
+                "fill='%s'%s%s>%s</path>"
+                % (px, py - s, px + s, py, px, py + s, px - s, py, color,
+                   ringattr, at, ti))
         elif shape == "square":
             self.marks.append("<rect x='%.1f' y='%.1f' width='%.1f' "
-                              "height='%.1f' rx='1.5' fill='%s'%s/>"
-                              % (px - r, py - r, 2 * r, 2 * r, color, ringattr))
+                              "height='%.1f' rx='1.5' fill='%s'%s%s>%s</rect>"
+                              % (px - r, py - r, 2 * r, 2 * r, color, ringattr,
+                                 at, ti))
         else:
-            self.marks.append("<circle cx='%.1f' cy='%.1f' r='%g' fill='%s'%s/>"
-                              % (px, py, r, color, ringattr))
+            self.marks.append("<circle cx='%.1f' cy='%.1f' r='%g' fill='%s'%s%s>"
+                              "%s</circle>"
+                              % (px, py, r, color, ringattr, at, ti))
         return self
 
     def vline(self, vx, color="var(--ink-3)", dash="4 3", width=1.5,

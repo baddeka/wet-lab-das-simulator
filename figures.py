@@ -147,7 +147,12 @@ def effect_sizes(d):
                         "<line x1='%.1f' y1='%.1f' x2='%.1f' y2='%.1f' "
                         "stroke='%s' stroke-width='1.6' opacity='.55'/>"
                         % (ax.x(v), y - 3.5, ax.x(v), y + 3.5, col))
-        ax.dot(r["d"], i, r=4.0, color=col)
+        ci = ("95%% interval %.2f to %.2f" % (r["lo"], r["hi"])) \
+            if r["lo"] is not None else "no interval: group sizes not reported"
+        ax.dot(r["d"], i, r=4.0, color=col,
+               tip="%s, %s %s · d = %.2f, %s · %s"
+                   % (r["biomarker"], r["cancer"] or "-", r["biofluid"] or "-",
+                      r["d"], ci, VERDICT_WORD.get(r["verdict"], r["verdict"])))
         label = "%s · %s" % (r["cancer"] or "-", r["biofluid"] or "-")
         ax.over.append("<text class='rowlab2' x='%.1f' y='%.1f'>%s</text>"
                        % (ax.x0 - 308, y + 4, charts.esc(label)))
@@ -188,7 +193,12 @@ def reconstruction(d):
             "stroke-width='1.4' opacity='.45'/>"
             % (ax.x(r["reported"]), ax.y(r["reported"]),
                ax.x(r["reported"]), ax.y(r["rebuilt"]), BAD if over else A))
-        ax.dot(r["reported"], r["rebuilt"], r=4.5, color=BAD if over else A)
+        ax.dot(r["reported"], r["rebuilt"], r=4.5, color=BAD if over else A,
+               tip="%s, %s · the study reports AUC %.3f, this pipeline "
+                   "rebuilds %.3f (%+.3f) · n = %s + %s"
+                   % (r["biomarker"], r["cancer"] or "-", r["reported"],
+                      r["rebuilt"], r["rebuilt"] - r["reported"],
+                      r["n_healthy"], r["n_sick"]))
         lx, ly = ax.x(r["reported"]) + 9, ax.y(r["rebuilt"]) - 5
         for px, py in placed:
             if abs(px - lx) < 78 and abs(py - ly) < 13:
@@ -230,12 +240,21 @@ def dose_response(d):
         ax.vline(dr["anchor_on_axis"], color=B, dash="5 4", width=1.5,
                  label="%s" % dr["anchor_name"], at=ax.y1 + 12)
 
-    ax.line(dr["curve"], color=A, width=2.4)
+    ax.line(dr["curve"], color=A, width=2.4,
+            tip="%s read by %s" % (dr["biomarker"], dr["protein"]))
+    ax.hover_along(dr["curve"],
+                   lambda vx, vy: "%s µM in the biofluid → %s at the "
+                                  "reader" % (charts.compact(vx), _fold(vy)))
     # the chord between the two clinical levels: its slope is the compression
     ax.line([(dr["healthy_uM"], 1.0), (dr["sick_uM"], dr["fold_at_sick"])],
             color=BAD, width=1.8, dash="6 4")
-    ax.dot(dr["healthy_uM"], 1.0, r=5, color=A)
-    ax.dot(dr["sick_uM"], dr["fold_at_sick"], r=5, color=A)
+    ax.dot(dr["healthy_uM"], 1.0, r=5, color=A,
+           tip="healthy median, %s µM · the baseline every other "
+               "reading is relative to" % charts.compact(dr["healthy_uM"]))
+    ax.dot(dr["sick_uM"], dr["fold_at_sick"], r=5, color=A,
+           tip="cancer median, %s µM → %s, which is this module's "
+               "device fold" % (charts.compact(dr["sick_uM"]),
+                                _fold(dr["fold_at_sick"])))
     ax.label_point(dr["healthy_uM"], 1.0, "healthy median",
                    sub="%s µM" % charts.compact(dr["healthy_uM"]),
                    color=INK, dx=-13, dy=28, anchor="end")
@@ -267,9 +286,14 @@ def time_course(d):
     top.hline(tc["K_oxyr"], color=INK3, dash="4 3")
     top.text(top.x1 - 4, top.y(tc["K_oxyr"]) - 7, "OxyR half-activation",
              cls="note", anchor="end", px=True)
-    top.line(tc["h2o2_cyt_sick"], color=A, width=2.2)
-    top.line(tc["h2o2_cyt_healthy"], color=A, width=1.6, dash="5 3")
-    top.line(tc["h2o2_cyt_blank"], color=INK3, width=1.6)
+    top.line(tc["h2o2_cyt_sick"], color=A, width=2.2, tip="cancer sample")
+    top.line(tc["h2o2_cyt_healthy"], color=A, width=1.6, dash="5 3",
+             tip="healthy sample")
+    top.line(tc["h2o2_cyt_blank"], color=INK3, width=1.6, tip="no sample")
+    top.hover_along(tc["h2o2_cyt_sick"],
+                    lambda vx, vy: "cancer sample at %s s: %s µM in the "
+                                   "cytoplasm" % (charts.compact(vx),
+                                                  charts.compact(vy)))
     top.vline(tc["T_read"], color=INK2, dash="3 3", width=1.4)
     top.legend([("cancer sample", A), ("healthy sample", A, "5 3"),
                 ("no sample", INK3)], y=top.y1 - 10)
@@ -282,6 +306,9 @@ def time_course(d):
     bot.vline(tc["T_read"], color=INK2, dash="3 3", width=1.4,
               label="the window this screen uses", at=bot.y1 + 13)
     bot.line(tc["fold"], color=A, width=2.4)
+    bot.hover_along(tc["fold"],
+                    lambda vx, vy: "a read window ending at %s s would report "
+                                   "%s" % (charts.compact(vx), _fold(vy)))
     bot.dot(tc["T_read"], tc["fold_at_T"], r=5, color=A)
     bot.label_point(tc["T_read"], tc["fold_at_T"], _fold(tc["fold_at_T"]),
                     color=INK, dx=-9, dy=16, anchor="end")
@@ -321,8 +348,14 @@ def distributions(d):
         ax.area(hi_tail, 0, A, 0.42)
     if lo_tail:
         ax.area(lo_tail, 0, B, 0.42)
-    ax.line(di["healthy"], color=A, width=2.2)
-    ax.line(di["sick"], color=B, width=2.2)
+    ax.line(di["healthy"], color=A, width=2.2, tip="healthy cohort")
+    ax.line(di["sick"], color=B, width=2.2, tip="cancer cohort")
+    ax.hover_along(di["healthy"],
+                   lambda vx, vy: "healthy cohort, reading %s relative to the "
+                                  "healthy median" % _fold(vx))
+    ax.hover_along(di["sick"],
+                   lambda vx, vy: "cancer cohort, reading %s relative to the "
+                                  "healthy median" % _fold(vx))
     ax.vline(cut, color=INK, dash="4 3", width=1.6)
 
     ax.text(ax.x(cut), ax.y1 - 26, "cut-off %s" % _fold(cut), cls="ptlab",
@@ -368,12 +401,23 @@ def roc(d):
     for s, col in zip(pick, hues):
         if s["clinical"].get("roc"):
             ax.line(s["clinical"]["roc"], color=col, width=1.6, dash="5 3",
-                    opacity=0.85)
+                    opacity=0.85,
+                    tip="%s in the clinic, AUC %.3f"
+                        % (s["biomarker"], s["clinical"]["auc"]))
         if s["device"].get("roc"):
-            ax.line(s["device"]["roc"], color=col, width=2.4)
+            ax.line(s["device"]["roc"], color=col, width=2.4,
+                    tip="%s at the reader, AUC %.3f"
+                        % (s["biomarker"], s["device"]["auc"]))
+            ax.hover_along(
+                s["device"]["roc"],
+                lambda vx, vy, bm=s["biomarker"]:
+                    "%s at the reader: catch %.0f%% of cancers at the cost of "
+                    "%.0f%% false positives" % (bm, 100 * vy, 100 * vx))
         yd = s["equal_error"]
         if yd:
-            ax.dot(1.0 - yd, yd, r=4.5, color=col)
+            ax.dot(1.0 - yd, yd, r=4.5, color=col,
+                   tip="%s · equal error rate: sensitivity and specificity "
+                       "both %.0f%%" % (s["biomarker"], 100 * yd))
         ax.over.append(
             "<line x1='%.1f' y1='%.1f' x2='%.1f' y2='%.1f' stroke='%s' "
             "stroke-width='2.6' stroke-linecap='round'/>"
@@ -419,8 +463,14 @@ def auc_ladder(d):
             "<line x1='%.1f' y1='%.1f' x2='%.1f' y2='%.1f' stroke='%s' "
             "stroke-width='2.4' opacity='.4' stroke-linecap='round'/>"
             % (ax.x(min(c, v)), y, ax.x(max(c, v)), y, INK3))
-        ax.dot(c, i, r=4.5, color=INK3, shape="diamond")
-        ax.dot(v, i, r=4.5, color=GOOD if v >= thr else BAD)
+        ax.dot(c, i, r=4.5, color=INK3, shape="diamond",
+               tip="%s · the cohorts separate at AUC %.3f on their own"
+                   % (s["biomarker"], c))
+        ax.dot(v, i, r=4.5, color=GOOD if v >= thr else BAD,
+               tip="%s read by %s · AUC %.3f at the reader, %+.3f against "
+                   "the clinic, compression %.2f"
+                   % (s["biomarker"], s["protein"], v, v - c,
+                      s["device"]["compression"]))
         ax.over.append("<text class='rowlab2' x='%.1f' y='%.1f'>%s</text>"
                        % (ax.x0 - 226, y, charts.esc(s["biomarker"])))
         ax.over.append("<text class='rownote2' x='%.1f' y='%.1f'>%s</text>"
@@ -453,7 +503,11 @@ def panel_rho(d):
     ax.frame(xlabel="correlation between the two markers in the same patient "
                     "(ρ, never measured)",
              ylabel="panel AUC", yfmt=lambda v, _=None: "%.3f" % v, xgrid=True)
-    ax.line(p["curve"], color=A, width=2.4)
+    ax.line(p["curve"], color=A, width=2.4,
+            tip="%s" % " + ".join(p["biomarkers"]))
+    ax.hover_along(p["curve"],
+                   lambda vx, vy: "at a correlation of %.2f the panel reaches "
+                                  "AUC %.3f" % (vx, vy))
     ax.hline(p["best_single"], color=B, dash="5 4",
              label="best single marker alone", anchor="start")
     ax.dot(p["rho_worst"], p["auc_worst"], r=5.5, color=BAD)
@@ -480,14 +534,22 @@ def oxyr(d):
     ax.frame(xlabel="resting cytoplasmic H₂O₂  (µM)",
              ylabel="OxyR activated", yfmt=_pct,
              yticks=[0, .25, .5, .75, 1.0])
-    ax.line(o["curve"], color=A, width=2.4)
+    ax.line(o["curve"], color=A, width=2.4, tip="OxyR activation")
+    ax.hover_along(o["curve"],
+                   lambda vx, vy: "%s µM resting peroxide leaves OxyR "
+                                  "%.0f%% activated" % (charts.compact(vx),
+                                                        100 * vy))
     ax.vline(o["K_oxyr"], color=INK3, dash="4 3", width=1.4,
              label="K = %s µM" % charts.log_tick_text(o["K_oxyr"]),
              at=ax.y(0.55), anchor="end")
     for key, col, dx, anchor in (("wildtype", GOOD, 12, "start"),
                                  ("knockout", BAD, -12, "end")):
         s = o[key]
-        ax.dot(s["h2o2"], s["activation"], r=5.5, color=col)
+        ax.dot(s["h2o2"], s["activation"], r=5.5, color=col,
+               tip="%s · resting peroxide %s µM, OxyR %.0f%% on, "
+                   "%.0f%% of its range left for the analyte"
+                   % (s["label"], charts.compact(s["h2o2"]),
+                      100 * s["activation"], 100 * s["headroom"]))
         ax.label_point(s["h2o2"], s["activation"], s["label"],
                        sub="%.0f%% on, %.0f%% of the range left"
                            % (100 * s["activation"], 100 * s["headroom"]),
@@ -520,9 +582,15 @@ def tornado(d):
         y = ax.y(i)
         col = GROUP_COLOR.get(r["chosen_by"], A)
         a, b = sorted((r["auc_low"], r["auc_high"]))
+        at, ti = charts.tip(
+            "%s, %s %s · halved: AUC %.3f · doubled: AUC %.3f "
+            "· swing %.3f · chosen by %s"
+            % (r["meaning"], charts.compact(r["value"]), r["unit"] or "",
+               r["auc_low"], r["auc_high"], r["swing"], r["chosen_by"]))
         ax.marks.append("<rect x='%.1f' y='%.1f' width='%.1f' height='11' "
-                        "rx='2.5' fill='%s' opacity='.72'/>"
-                        % (ax.x(a), y - 5.5, max(ax.x(b) - ax.x(a), 1.2), col))
+                        "rx='2.5' fill='%s' opacity='.72'%s>%s</rect>"
+                        % (ax.x(a), y - 5.5, max(ax.x(b) - ax.x(a), 1.2), col,
+                           at, ti))
         ax.over.append("<text class='rowlab2' x='%.1f' y='%.1f'>%s</text>"
                        % (ax.x0 - 240, y + 4, charts.esc(r["meaning"])))
         unit = (" " + r["unit"]) if r["unit"] else ""
@@ -564,7 +632,9 @@ def scaling(d):
     hues = [A, B, C]
     for i, p in enumerate(params):
         y = ax.y(i)
-        ax.dot(predicted[p], i, r=5.5, color=INK, shape="square", ring=False)
+        ax.dot(predicted[p], i, r=5.5, color=INK, shape="square", ring=False,
+               tip="%s · the closed form predicts an exponent of %+.0f"
+                   % (meaning[p], predicted[p]))
         agree = True
         for s, g, col in zip(sc, got, hues):
             r = g[i]
@@ -574,7 +644,12 @@ def scaling(d):
                 "<line x1='%.1f' y1='%.1f' x2='%.1f' y2='%.1f' stroke='%s' "
                 "stroke-width='1.4' opacity='.4' stroke-dasharray='3 3'/>"
                 % (ax.x(predicted[p]), y, ax.x(r["measured"]), y, col))
-            ax.dot(r["measured"], i, r=4.5, color=col)
+            ax.dot(r["measured"], i, r=4.5, color=col,
+                   tip="%s · %s · the closed form predicts %+.0f, the "
+                       "full model obeys %+.3f · %s"
+                       % (s["label"], r["meaning"], r["predicted"],
+                          r["measured"],
+                          "confirmed" if r["holds"] else "not confirmed"))
             agree = agree and r["holds"]
         ax.over.append("<text class='rowlab2' x='%.1f' y='%.1f'>%s</text>"
                        % (ax.x0 - 224, y, charts.esc(meaning[p])))
@@ -624,7 +699,12 @@ def enzyme_charts(d, biomarker):
                    yfmt=_fold)
         left.band(lo, hi, A, 0.10, axis="y")
         for r in mine:
-            left.dot(r["efficiency"], r["device_fold"], r=5, color=A)
+            left.dot(r["efficiency"], r["device_fold"], r=5, color=A,
+                     tip="%s from %s · kcat/Km %s µM⁻¹s⁻¹ "
+                         "delivers a fold of %s"
+                         % (r["protein"], r["organism"] or "-",
+                            charts.compact(r["efficiency"]),
+                            _fold(r["device_fold"])))
         # the two DhaPAO entries differ only in buffer and sit a hair apart
         _place(left, [(r["efficiency"], r["device_fold"], r["protein"])
                       for r in sorted(mine, key=lambda x: x["device_fold"],
@@ -647,7 +727,13 @@ def enzyme_charts(d, biomarker):
         right.text(xs[-1], k / xs[-1], "slope \u22121", cls="note",
                    anchor="end", dx=-6, dy=-8)
     for r in ref:
-        right.dot(r["efficiency"], r["min_enzyme_uM"], r=4.5, color=B)
+        right.dot(r["efficiency"], r["min_enzyme_uM"], r=4.5, color=B,
+                  tip="%s on %s · kcat/Km %s µM⁻¹s⁻¹ "
+                      "needs %s µM of enzyme to turn over its analyte "
+                      "inside the read"
+                      % (r["protein"], r["biomarker"],
+                         charts.compact(r["efficiency"]),
+                         charts.compact(r["min_enzyme_uM"])))
 
     groups = []
     if left is not None:
@@ -662,3 +748,162 @@ def enzyme_charts(d, biomarker):
 # text node here, and Unicode has no subscript c, so "kcat" set that way would
 # have read "keat".
 EFF_AXIS = "catalytic efficiency, kcat/Km  (\u00b5M\u207b\u00b9 s\u207b\u00b9)"
+
+
+# ----------------------------------------------- where each constant sits
+
+def positioning(d):
+    """Each module's constant against the clinical range of its analyte.
+
+    The last chart on the page that drew its own axis. Nothing was wrong with
+    the picture, but it reached its ticks, its gridlines and its row labels by
+    a second route, and a second route is how two figures come to disagree
+    about what a number looks like.
+    """
+    rows = d.get("positioning") or []
+    rows = [r for r in rows if r.get("anchor_uM") and r.get("healthy_uM")
+            and r.get("sick_uM")]
+    if not rows:
+        return None
+    n = len(rows)
+    vals = []
+    for r in rows:
+        vals += [r["anchor_uM"], r["healthy_uM"], r["sick_uM"]]
+    lo, hi = min(vals), max(vals)
+
+    ax = Axes(w=860, h=92 + 30 * n, left=232, right=128, top=58, bottom=58,
+              xlog=True)
+    ax.xlim(lo, hi, pad=0.1).ylim(n - 0.5, -0.5)
+    ax.frame(xlabel="concentration in the biofluid  (\u00b5M)", ygrid=False,
+             xgrid=True, yticks=[])
+    for i, r in enumerate(rows):
+        y = ax.y(i)
+        col = {"green": GOOD, "yellow": WARN, "red": BAD}.get(r["light"], INK3)
+        a, b = sorted((r["healthy_uM"], r["sick_uM"]))
+        at, ti = charts.tip(
+            "%s \u00b7 %s in %s, %s \u00b7 healthy %s, cancer %s \u00b5M"
+            % (r["biomarker"], r["cancer"] or "-", r["biofluid"] or "-",
+               r["reason"] or "", charts.compact(r["healthy_uM"]),
+               charts.compact(r["sick_uM"])))
+        ax.marks.append(
+            "<line x1='%.1f' y1='%.1f' x2='%.1f' y2='%.1f' stroke='%s' "
+            "stroke-width='7' stroke-linecap='round' opacity='.5'%s>%s</line>"
+            % (ax.x(a), y, ax.x(b), y, col, at, ti))
+        ax.dot(r["anchor_uM"], i, r=4.6, color=INK, shape="diamond",
+               tip="%s read by %s \u00b7 %s = %s \u00b5M \u00b7 the analyte sits "
+                   "%s" % (r["biomarker"], r["protein"], r["anchor_name"],
+                           charts.compact(r["anchor_uM"]),
+                           _position_word(r["ratio_to_anchor"])))
+        ax.over.append("<text class='rowlab2' x='%.1f' y='%.1f'>%s</text>"
+                       % (ax.x0 - 224, y, charts.esc(r["biomarker"])))
+        ax.over.append("<text class='rownote2' x='%.1f' y='%.1f'>%s</text>"
+                       % (ax.x0 - 224, y + 13, charts.esc(r["protein"])))
+        ax.over.append("<text class='rownote2' x='%.1f' y='%.1f'>%s</text>"
+                       % (ax.x1 + 9, y + 4,
+                          charts.esc(_position_word(r["ratio_to_anchor"]))))
+    # the second key item is a diamond, which legend() does not draw, so it is
+    # placed by hand - past the width of the first label rather than at a guess
+    kx = ax.x0 - 224
+    first = "the published healthy-to-cancer span"
+    ax.legend([(first, INK3)], x=kx, y=ax.y1 - 30)
+    dx = kx + 22 + 7.2 * len(first) + 34
+    ax.over.append("<path d='M%.1f,%.1f L%.1f,%.1f L%.1f,%.1f L%.1f,%.1f Z' "
+                   "fill='%s'/>"
+                   % (dx, ax.y1 - 40, dx + 6, ax.y1 - 34,
+                      dx, ax.y1 - 28, dx - 6, ax.y1 - 34, INK))
+    ax.over.append("<text class='lgd' x='%.1f' y='%.1f'>the module\u2019s own "
+                   "constant</text>" % (dx + 14, ax.y1 - 30))
+    return ax.svg(title="Module constant against clinical range")
+
+
+def _position_word(ratio):
+    if ratio is None:
+        return "-"
+    if 0.1 <= ratio <= 10:
+        return "inside the range"
+    return ("%s\u00d7 below" % charts.compact(1.0 / ratio, 2) if ratio < 1
+            else "%s\u00d7 above" % charts.compact(ratio, 2))
+
+
+# ------------------------------------------------------------- the opening
+
+LIGHT_COLOR = {"green": GOOD, "yellow": WARN, "red": BAD}
+LIGHT_WORD = {"green": "passes outright", "yellow": "passes once the sample is "
+                                                    "concentrated",
+              "red": "rejected"}
+
+
+def library_map(d):
+    """Every module-study pair, one mark each, grouped by biomarker.
+
+    The opening figure used to be all 52 marks in one row. It carried the
+    count and nothing else: a reader learned that most of the library fails,
+    which the next sentence says anyway. Grouped by biomarker it carries the
+    shape of the result instead - that the passes are not spread thinly across
+    the library but sit on one analyte, and that two biomarkers have a module
+    and no study behind it.
+    """
+    cands = d.get("candidates") or []
+    if not cands:
+        return None
+    rank = {"green": 0, "yellow": 1, "red": 2}
+    groups = {}
+    for c in cands:
+        groups.setdefault(c["biomarker"], []).append(c)
+    order = sorted(groups,
+                   key=lambda b: (-sum(1 for c in groups[b] if c["light"] == "green"),
+                                  -sum(1 for c in groups[b] if c["light"] == "yellow"),
+                                  -len(groups[b]), b))
+
+    MW, MH, GAP, ROW = 13.0, 17.0, 3.0, 30.0
+    left, top, right = 150.0, 56.0, 210.0
+    widest = max(len(v) for v in groups.values())
+    W = left + widest * (MW + GAP) + right
+    H = top + len(order) * ROW + 26
+
+    out = ["<svg class='chart' viewBox='0 0 %g %g' style='max-width:%gpx' "
+           "role='img' preserveAspectRatio='xMinYMin meet' aria-label='Every "
+           "module measured against every clinical study, grouped by "
+           "biomarker'>" % (W, H, W)]
+    for i, bm in enumerate(order):
+        y = top + i * ROW
+        items = sorted(groups[bm], key=lambda c: (rank[c["light"]],
+                                                  -(c.get("auc_device") or 0)))
+        out.append("<text class='rowlab2' x='%.1f' y='%.1f' "
+                   "text-anchor='end'>%s</text>"
+                   % (left - 14, y + 12, charts.esc(bm)))
+        for j, c in enumerate(items):
+            x = left + j * (MW + GAP)
+            col = LIGHT_COLOR.get(c["light"], INK3)
+            at, ti = charts.tip(
+                "%s read by %s \u00b7 %s in %s \u00b7 %s%s"
+                % (c["biomarker"], c["protein"], c["cancer"] or "no study",
+                   c["biofluid"] or "-", LIGHT_WORD.get(c["light"], c["light"]),
+                   (" \u00b7 AUC %.3f" % c["auc_device"])
+                   if c.get("auc_device") else ""))
+            out.append("<rect x='%.1f' y='%.1f' width='%g' height='%g' rx='3' "
+                       "fill='%s' opacity='%s'%s>%s</rect>"
+                       % (x, y, MW, MH, col,
+                          ".45" if c["light"] == "red" else "1", at, ti))
+        n_pass = sum(1 for c in items if c["light"] == "green")
+        n_conc = sum(1 for c in items if c["light"] == "yellow")
+        note = ("%d of %d" % (n_pass + n_conc, len(items))) if (n_pass + n_conc) \
+            else "none of %d" % len(items)
+        out.append("<text class='rownote2' x='%.1f' y='%.1f'>%s</text>"
+                   % (left + widest * (MW + GAP) + 10, y + 12,
+                      charts.esc(note)))
+
+    key = [("passes outright", GOOD, "1"),
+           ("passes concentrated", WARN, "1"),
+           ("rejected", BAD, ".45")]
+    x = left
+    for label, col, op in key:
+        out.append("<rect x='%.1f' y='%.1f' width='11' height='11' rx='2.5' "
+                   "fill='%s' opacity='%s'/>" % (x, top - 34, col, op))
+        out.append("<text class='lgd' x='%.1f' y='%.1f'>%s</text>"
+                   % (x + 17, top - 25, charts.esc(label)))
+        x += 17 + 7.2 * len(label) + 20
+    out.append("<text class='note' x='%.1f' y='%.1f'>one mark is one module "
+               "against one study</text>" % (left, H - 8))
+    out.append("</svg>")
+    return "".join(out)

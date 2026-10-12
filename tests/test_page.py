@@ -148,6 +148,29 @@ def main(argv=()):
     check("every section a sentence points at exists", refd <= heads,
           "pointed at %s, page has %s" % (sorted(refd - heads), sorted(heads)))
 
+    # a reference token that never found its figure would print as control
+    # characters in the middle of a sentence
+    check("no unresolved figure reference is left in the text",
+          "\x01" not in html, html.count("\x01"))
+    xrefs = set(re.findall(r"class='xref' href='#([\w-]+)'", html))
+    check("every figure reference in the prose points at something that exists",
+          xrefs <= set(re.findall(r"id='([\w-]+)'", html))
+          | set(re.findall(r'id="([\w-]+)"', html)), sorted(xrefs))
+    check("the prose cites figures by number", len(xrefs) >= 5, len(xrefs))
+
+    print()
+    print("the figures can be read, not just looked at")
+    tips = re.findall(r"data-tip='", html)
+    titles = re.findall(r"<title>", html)
+    check("the charts carry hover readouts", len(tips) >= 40, len(tips))
+    check("every readout is also a native title, for print and screen readers",
+          len(titles) >= len(tips), (len(titles), len(tips)))
+    charted = set(re.findall(r"<svg class=['\"]chart['\"].*?</svg>", html, re.S))
+    without = [i for i, svg in enumerate(charted) if "data-tip" not in svg]
+    check("every chart has at least one readout on it", not without,
+          "%d chart(s) with none" % len(without))
+    check("there is a print stylesheet", "@media print" in html)
+
     print()
     print("every equation defines its symbols")
     eqs = len(re.findall(r"<div class='eq'>", html))

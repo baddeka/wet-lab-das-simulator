@@ -326,6 +326,43 @@ ol.refs li:target{background:rgba(42,120,214,.08);border-radius:6px;
 .flag .h{display:block;font-size:11px;letter-spacing:.12em;
          text-transform:uppercase;color:#8a6100;margin:0 0 8px;font-weight:600}
 
+/* a reference from the prose to a numbered figure or table */
+a.xref{color:var(--series-a);text-decoration:none;white-space:nowrap;
+       border-bottom:1px solid rgba(42,120,214,.3)}
+a.xref:hover{border-bottom-color:var(--series-a)}
+
+/* ------------------------------------------------------------- tooltips */
+.tip{position:fixed;z-index:50;display:none;pointer-events:none;
+     background:var(--ink-1);color:var(--surface-1);font:12.5px/1.45 var(--sans);
+     padding:7px 10px;border-radius:7px;max-width:280px;
+     box-shadow:0 4px 14px rgba(0,0,0,.18)}
+[data-tip]{cursor:crosshair}
+
+/* ---------------------------------------------------------------- print
+   Judges print. Without this the contents rail takes a column on every sheet,
+   the scrolling wrappers clip their figures at the viewport width, and figures
+   break across pages in the middle of an axis. */
+@media print{
+  @page{margin:14mm}
+  html,body{background:#fff;color:#000}
+  .shell{display:block;max-width:none;padding:0}
+  .rail,.filters,.more,.swipe,.tip{display:none!important}
+  .col{grid-column:auto}
+  .figscroll,.scroll{overflow:visible!important}
+  .figscroll svg,.scroll table{min-width:0!important}
+  svg{max-width:100%!important}
+  figure.fig,figure.tbl,.eq,.callout,.flag,.card{break-inside:avoid;
+      page-break-inside:avoid}
+  h2,h3{break-after:avoid;page-break-after:avoid}
+  section{break-before:auto;margin-top:34px}
+  tr{break-inside:avoid}
+  a{color:#000;text-decoration:none}
+  /* a printed citation is useless as a link, so print where it points */
+  ol.refs a::after{content:" (doi.org)";color:#555;font-size:.9em}
+  .tiles{border-top:1px solid #999}
+  header{padding-top:0}
+}
+
 @media (max-width:980px){
   .shell{grid-template-columns:1fr;gap:0;padding:0 20px 90px}
   .rail{position:static;max-height:none;padding:22px 0 0;

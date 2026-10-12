@@ -7,9 +7,18 @@ before any of this refactor existed, with Km at the alternative-buffer value of
 This test re-runs the same seventeen scripts against the refactored model with
 Km pinned back to that same alternative-buffer row of sensors.csv, and demands
 byte-identical output. Agreement means the refactor moved constants without
-touching physics, so the only number that moves in normal operation is the Km
-itself. The pinned value is read out of sensors.csv, not written here, so this
-file contains no enzyme constant either.
+touching physics. The pinned Km is read out of sensors.csv, not written here,
+so this file contains no enzyme constant either.
+
+Two chassis constants are pinned alongside it, for a different reason. The
+baseline is a historical artefact: it records what the physics did under the
+constants the project held in 2026-10. Two of those have since been replaced by
+published measurements - the cell volume per OD600 and the sfGFP maturation
+half-life, both roughly a factor off what the file used to carry. Repinning them
+here keeps this test doing its one job, which is to prove the refactor did not
+touch the physics, and stops it doubling as a freeze on the data files. A change
+to data/platform.csv should be free to move the model's answers; a change to
+das_model.py should not.
 
     python tests/test_regression.py            all scripts, a few minutes
     python tests/test_regression.py --quick    skips the slow parameter sweeps
@@ -63,6 +72,30 @@ def alt_buffer_km():
     return rows[0].km_uM, rows[0].protein_name
 
 
+# The chassis values the baseline was captured under. They are written here
+# rather than read from a file on purpose: the point of a baseline is that it
+# does not move when the data files do.
+PRE_REFACTOR = {
+    "phi_per_OD": 8e-4,                   # now 3.6e-3, Volkmer & Heinemann 2011
+    "gfp_maturation_halflife_s": 360.0,   # now 816 s, Balleza et al. 2017
+}
+
+
+def pin_chassis():
+    """Restore the constants the baseline was recorded under, and say which."""
+    import math
+    moved = []
+    for name, old in sorted(PRE_REFACTOR.items()):
+        now = das_model.DEFAULTS.get(name)
+        if now is not None and abs(now - old) > 1e-12 * max(abs(old), 1.0):
+            moved.append("%s %g -> %g" % (name, old, now))
+        das_model.DEFAULTS[name] = old
+    # the two that are derived from a half-life have to follow it back
+    das_model.DEFAULTS["k_mat"] = (
+        math.log(2.0) / PRE_REFACTOR["gfp_maturation_halflife_s"])
+    return moved
+
+
 def run_script(name):
     out = io.StringIO()
     with contextlib.redirect_stdout(out):
@@ -75,6 +108,9 @@ def main():
     km, protein = alt_buffer_km()
     das_model.DEFAULTS["Km"] = km
     print("pinning Km to %.1f uM from the %r row of sensors.csv" % (km, protein))
+    for line in pin_chassis():
+        print("pinning back to the value the baseline was recorded under: %s"
+              % line)
     print("comparing against %s\n" % os.path.basename(BASELINE))
 
     sections = baseline_sections(BASELINE)
