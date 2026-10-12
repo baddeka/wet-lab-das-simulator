@@ -15,7 +15,8 @@ import re
 import charts
 import figures
 import page_parts
-from page_parts import Refs, eq, frac, kind_key, parameters_table, scenario_table
+from page_parts import (Refs, eq, kind_key, parameters_table,
+                        scenario_table)
 from render_page import (CSS, FONTS, JS, PALETTE, PALETTE_DARK, SKELETON_SVG, e,
                          enzymes_section, gaps_section, hero_strip,
                          library_table, limits_callout, mechanism_figure, num,
@@ -40,8 +41,8 @@ HEAD = """<!DOCTYPE html>
 <meta name="description" content="A fixed plasmid skeleton, interchangeable recognition modules, and a model that decides which module is worth building. Screens a library of biomarkers against published clinical distributions and measured enzyme kinetics.">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129516;</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="assets/fonts/SpaceGrotesk-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/Fraunces-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="%s">
 <style>:root{%s}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){%s}}
@@ -315,80 +316,21 @@ def page(d):
             "section&nbsp;3.3 tests rather than assumes.</p>")
 
     doc.sub("model-compartments", "Peroxide in the two compartments")
-    doc.raw(eq([
-        "%s = P<sub>endo</sub> + v<sub>cyt</sub> + k<sub>mem</sub>&#8201;"
-        "([H₂O₂]<sub>med</sub> − [H₂O₂]<sub>cyt</sub>) "
-        "− k<sub>scav</sub>&#8201;[H₂O₂]<sub>cyt</sub>"
-        % frac("d[H₂O₂]<sub>cyt</sub>", "dt"),
-        "%s = v<sub>med</sub> + φ&#8201;k<sub>mem</sub>&#8201;"
-        "([H₂O₂]<sub>cyt</sub> − [H₂O₂]<sub>med</sub>) "
-        "− k<sub>chem</sub>&#8201;[H₂O₂]<sub>med</sub>"
-        % frac("d[H₂O₂]<sub>med</sub>", "dt"),
-    ], label="the two compartments", where=[
-        ("[H₂O₂]<sub>cyt</sub>, [H₂O₂]<sub>med</sub>",
-         "peroxide in the cytoplasm and in the medium, µM"),
-        ("P<sub>endo</sub>",
-         "the cell's own cytoplasmic peroxide production, µM/s - the "
-         "competitor, and the denominator of the whole design"),
-        ("v<sub>cyt</sub>, v<sub>med</sub>",
-         "enzymatic production, in whichever compartment the oxidase sits"),
-        ("k<sub>mem</sub>", "first-order exchange across the membrane, s⁻¹"),
-        ("k<sub>scav</sub>",
-         "intracellular scavenging by KatG, KatE and AhpCF, s⁻¹"),
-        ("k<sub>chem</sub>",
-         "chemical loss of peroxide in the medium, s⁻¹; zero unless "
-         "the sample matrix contributes"),
-        ("φ", "fraction of the assay volume that is cytoplasm"),
-    ]))
+    doc.raw(eq("compartments"))
     doc.p("The enzymatic term is Michaelis-Menten in the analyte, which "
           "is why a module's K<sub>m</sub> matters at all: it decides whether "
           "the branch is first order in the biomarker or already saturated.")
-    doc.raw(eq("v = %s"
-               % frac("k<sub>cat</sub>&#8201;[E]&#8201;[S]",
-                      "K<sub>m</sub> + [S]"),
-               label="production by the oxidase", where=[
-        ("[S]", "analyte in the compartment the enzyme occupies, µM"),
-        ("[E]", "enzyme concentration, µM"),
-        ("k<sub>cat</sub>, K<sub>m</sub>",
-         "the module's own published constants, from data/sensors.csv"),
-    ]))
+    doc.raw(eq("michaelis"))
 
     doc.sub("model-oxyr", "The OxyR switch and the reporter")
-    doc.raw(eq([
-        "f<sub>OxyR</sub> = %s"
-        % frac("[H₂O₂]<sub>cyt</sub><sup>n</sup>",
-               "K<sup>n</sup> + [H₂O₂]<sub>cyt</sub><sup>n</sup>"),
-        "%s = β&#8201;f<sub>OxyR</sub> + leak − (k<sub>mat</sub> + "
-        "μ)&#8201;m" % frac("dm", "dt"),
-        "%s = k<sub>mat</sub>&#8201;m − μ&#8201;g"
-        % frac("dg", "dt"),
-    ], label="activation, transcription, maturation", where=[
-        ("f<sub>OxyR</sub>", "fraction of OxyR in its activated form"),
-        ("K, n", "half-activation point and Hill coefficient of OxyR"),
-        ("m, g", "immature and mature reporter, µM"),
-        ("β, leak", "promoter output when fully activated, and at rest"),
-        ("k<sub>mat</sub>", "reporter maturation rate, ln2 over its half-life"),
-        ("μ", "growth rate; the reporter is diluted, not degraded"),
-    ]))
+    doc.raw(eq("oxyr"))
     doc.p("A type B module skips the first two terms entirely. There is no "
           "oxidase and no peroxide: the analyte binds the transcription factor "
           "and the occupancy is what drives the promoter. Where the same "
           "protein is published as binding more than one analyte, all of them "
           "compete for the one site, so the readout is total occupancy rather "
           "than the target's share of it.")
-    doc.raw(eq("θ = %s"
-               % frac("∑<sub>i</sub> [A<sub>i</sub>]&#8201;/&#8201;"
-                      "K<sub>d,i</sub>",
-                      "1 + ∑<sub>i</sub> [A<sub>i</sub>]&#8201;/&#8201;"
-                      "K<sub>d,i</sub>"),
-               label="occupancy, module type B", where=[
-        ("θ", "fraction of the binding site occupied, which replaces "
-                   "f<sub>OxyR</sub> above"),
-        ("[A<sub>i</sub>], K<sub>d,i</sub>",
-         "each analyte this very protein is published as binding, with its own "
-         "dissociation constant. Only analytes with a measured K<sub>d</sub> "
-         "for this protein appear; nothing is assumed by analogy."),
-    ]))
+    doc.raw(eq("occupancy"))
     doc.aside("The competitive sum is exact only at a Hill coefficient of 1, "
               "and the platform assumes 1 because no source reports a Hill "
               "coefficient for any sensor in the library. Where that matters "
@@ -447,16 +389,7 @@ def page(d):
           "expression for signal over background, and then turned it into "
           "advice. It is worth checking, because a closed form is only as good "
           "as the regime it was derived in.")
-    doc.raw(eq("S/B &asymp; %s"
-               % frac("S<sub>0</sub>",
-                      "φ&#8201;P<sub>endo</sub>&#8201;T"),
-               label="the closed form", where=[
-        ("S<sub>0</sub>", "analyte delivered into the assay"),
-        ("T", "read window, s"),
-        ("S/B", "signal over the blank - not the fold between a healthy "
-                "and a cancer sample, which is what every verdict on this page "
-                "uses"),
-    ]))
+    doc.raw(eq("closedform"))
     doc.p("Read as exponents, it predicts that S/B falls as "
           "1&#8201;/&#8201;&#966;, as 1&#8201;/&#8201;P<sub>endo</sub> and as "
           "1&#8201;/&#8201;T, and that the scavenging rate cancels out "
@@ -606,27 +539,7 @@ def page(d):
           "squeezed. The biological spread is squeezed by exactly the same "
           "factor, which is why the squeeze cannot be undone by rescaling "
           "afterwards. Underneath sits the reader's own error.")
-    doc.raw(eq([
-        "c = %s" % frac("ln&#8201;(device fold)", "ln&#8201;(clinical fold)"),
-        "σ<sub>reader</sub> = CV&#8201;/&#8201;√n&nbsp;&nbsp;&nbsp;"
-        "σ<sub>tot</sub> = √((c&#8201;σ<sub>bio</sub>)² + "
-        "σ<sub>reader</sub>²)",
-        "d = %s&nbsp;&nbsp;&nbsp;AUC = Φ(d&#8201;/&#8201;√2)"
-        % frac("c&#8201;|ln&#8201;(cancer&#8201;/&#8201;healthy)|",
-               "σ<sub>pooled</sub>"),
-    ], label="propagation to sensitivity and specificity", where=[
-        ("c", "the fraction of the log difference that survives to the reader, "
-              "measured by running the module at both clinical levels"),
-        ("σ<sub>bio</sub>",
-         "the cohort's own spread on the log scale, from the published mean and "
-         "spread"),
-        ("CV, n",
-         "the reader's relative error per measurement and the number of "
-         "replicates - %s and %d here, giving a limit of detection of "
-         "%s&times;" % (pct(t["cv_reader"]), int(t["n_rep"]),
-                        num(t["fold_needed"], 4))),
-        ("Φ", "the standard normal distribution function"),
-    ]))
+    doc.raw(eq("propagation"))
     doc.aside("Everything is done on the log scale, because concentrations of "
               "urinary metabolites are roughly log-normal and because a reader "
               "CV is multiplicative. At the cut-off where the two error rates "
@@ -695,20 +608,7 @@ def page(d):
           "published assays their specificity. Reading several modules at once "
           "is the way out, and against a fixed skeleton that is a cloning job "
           "rather than a redesign.")
-    doc.raw(eq([
-        "d<sub>panel</sub> = √(dᵀ R⁻¹ d)&nbsp;&nbsp;&nbsp;"
-        "R = (1−ρ)&#8201;I + ρ&#8201;J",
-        "d<sub>panel</sub>² = %s"
-        % frac("∑ d<sub>i</sub>² − ρ&#8201;"
-               "(∑ d<sub>i</sub>)² &#8201;/&#8201; "
-               "(1 + (k−1)ρ)", "1 − ρ"),
-    ], label="combining modules", where=[
-        ("d<sub>i</sub>", "each module's separation at the reader"),
-        ("R, ρ",
-         "the correlation matrix of the markers in the same patient, assumed "
-         "equal across every pair"),
-        ("k", "how many modules are in the panel"),
-    ]))
+    doc.raw(eq("panel"))
     doc.aside("How much a panel gains depends on how its markers co-vary, and "
               "that needs them measured in the same patients. Not one source in "
               "this library reports it. So each panel is given as a range over "

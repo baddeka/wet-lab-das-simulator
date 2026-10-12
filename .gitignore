@@ -12,3 +12,6 @@ Thumbs.db
 *.pdf
 page*.png
 limits*.png
+
+# KaTeX is installed only to re-render data/katex.json; the cache is what ships
+node_modules/

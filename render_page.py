@@ -16,41 +16,53 @@ import math
 import re
 
 PALETTE = """
-  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --surface-1: #fcfcfb;
-  --plane: #f9f9f7;
-  --ink-1: #0b0b0b;
-  --ink-2: #52514e;
-  --ink-3: #898781;
-  --grid: #e1e0d9;
-  --axis: #c3c2b7;
-  --ring: rgba(11,11,11,.10);
-  --series-a: #2a78d6;
-  --series-b: #eb6834;
-  --series-c: #1a9e76;
-  --good: #0ca30c;
-  --warning: #fab219;
-  --critical: #d03b3b;
+  /* Lifted from the team wiki's own tokens (nu-kazakhstan/src/containers/App),
+     so the two sites are the same object seen twice. The wiki is dark only and
+     so is this: a light variant would be a third design, not a courtesy. Print
+     is the light path, and page_css has the rules for it. */
+  --sans: "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  --dusk-950: #04060e;
+  --dusk-900: #060912;
+  --dusk-800: #0d1730;
+  --dusk-700: #17274d;
+  --sand-100: #f6e3ba;
+  --sand-200: #ecc98a;
+  --sand-300: #e0aa5c;
+  --rust-500: #d19a2e;
+  --firefly: #d9f76b;
+
+  --plane: #04060e;
+  --surface-1: rgba(244,233,214,.04);
+  --surface-2: rgba(244,233,214,.07);
+  --ink-1: #f2e9d8;
+  --ink-2: #c3b89f;
+  --ink-3: #8b8270;
+  --grid: rgba(240,228,205,.09);
+  --axis: rgba(240,228,205,.26);
+  --ring: rgba(240,228,205,.11);
+  --ring-strong: rgba(240,228,205,.22);
+
+  /* Data series. Not the wiki's accent colours as such: firefly glow sits at
+     L 0.93, far above the band a mark can live in against this background, and
+     it stays what it is on the wiki - a highlight. These three were checked
+     with the dataviz validator against #04060e, all pairs, and pass the
+     lightness band, the chroma floor, CVD separation and contrast. */
+  --series-a: #5c7bf0;
+  --series-b: #d1763c;
+  --series-c: #2ba497;
+
+  --good: #5fbf7b;
+  --warning: #e0aa5c;
+  --critical: #e2523a;
 """
 
-PALETTE_DARK = """
-  --surface-1: #1a1a19;
-  --plane: #0d0d0d;
-  --ink-1: #ffffff;
-  --ink-2: #c3c2b7;
-  --ink-3: #898781;
-  --grid: #2c2c2a;
-  --axis: #383835;
-  --ring: rgba(255,255,255,.10);
-  --series-a: #3987e5;
-  --series-b: #d95926;
-  --series-c: #21a97f;
-  --good: #0ca30c;
-  --warning: #fab219;
-  --critical: #d03b3b;
-"""
+# The wiki has no light mode and neither does this. The constant is kept so the
+# HEAD template and the existing tests keep their shape; it re-states the dark
+# tokens rather than inverting them.
+PALETTE_DARK = PALETTE
 
 
 LEAK = re.compile(

@@ -11,8 +11,12 @@ inverse next to a unit and a tidy note and it reads as measured. Of the 31
 constants this platform runs on, two are measured, two are derived from those,
 eight are assumed and the rest are decisions. The table says so on every row.
 """
+import io
+import json
+import os
 import re
 
+import equations
 from render_page import e, num, sig
 
 # Groups of data/platform.csv, in the order a reader meets them.
@@ -125,28 +129,48 @@ class Refs(object):
 
 # ------------------------------------------------------------------ equations
 
-def frac(num_html, den_html):
-    return ("<span class='frac'><span class='num'>%s</span>"
-            "<span class='den'>%s</span></span>" % (num_html, den_html))
+_KATEX = None
 
 
-def eq(lines, label=None, where=None):
+def katex(name):
+    """The rendered maths for one equation or symbol, from data/katex.json.
+
+    Rendered by KaTeX at build time rather than in the browser, so the maths is
+    in the markup: present with JavaScript off, present in print, and carrying
+    the MathML KaTeX emits beside its visual output. A name with no entry stops
+    the build instead of leaving a hole on the page.
+    """
+    global _KATEX
+    if _KATEX is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "data", "katex.json")
+        with io.open(path, encoding="utf-8") as fh:
+            _KATEX = json.load(fh)
+    got = _KATEX.get(name)
+    if not got:
+        raise SystemExit("no rendered maths for %r. Run: python build_math.py"
+                         % name)
+    return got["html"]
+
+
+def eq(name):
     """A display equation, with every symbol in it defined underneath.
 
     The 'where:' list is not decoration. An equation in a write-up is read by
     someone checking whether it is the equation they would have written, and
     they cannot do that without knowing which letter is which.
     """
+    label, _tex, where = equations.EQUATIONS[name]
     out = ["<div class='eq'>"]
     if label:
         out.append("<span class='eqlab'>%s</span>" % e(label))
-    for ln in (lines if isinstance(lines, (list, tuple)) else [lines]):
-        out.append("<span class='l'>%s</span>" % ln)
+    out.append(katex(name))
     out.append("</div>")
     if where:
         out.append("<dl class='where'>")
-        for sym, mean in where:
-            out.append("<dt>%s</dt><dd>%s</dd>" % (sym, mean))
+        for i, (_sym, mean) in enumerate(where):
+            out.append("<dt>%s</dt><dd>%s</dd>"
+                       % (katex("%s.sym%d" % (name, i)), mean))
         out.append("</dl>")
     return "\n".join(out)
 
