@@ -2,7 +2,10 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
-.claude/
+# Local editor and dev-server settings, but not iGEM's AI-use policy,
+# which ships with the repository.
+.claude/*
+!.claude/RESPONSIBLE_AI_USE.md
 
 # The write-up drafts and their figures. They live in this folder so nothing is
 # lost, but they are deliberately not published: this repository is public, and

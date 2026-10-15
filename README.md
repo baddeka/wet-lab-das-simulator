@@ -5,6 +5,8 @@ insertion sites. Between them sits a module that recognises one biomarker. Anoth
 biomarker, another module, same skeleton. Colorectal cancer stays as the worked example,
 not as the project.
 
+Software deliverable of **[Team NU-Kazakhstan, iGEM 2026](https://2026.igem.wiki/nu-kazakhstan/)**.
+
 **[Open the platform →](https://baddeka.github.io/will-it-glow/)** ·
 [the worked example, every parameter exposed →](https://baddeka.github.io/will-it-glow/simulator.html)
 
