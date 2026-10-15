@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 """A small plotting kit in SVG: scales, ticks, frames, marks, legends.
 
-Every chart on the page goes through here rather than being drawn by hand. The
-first version of this page drew each figure inline, and the figures diverged:
-one had gridlines and another did not, two used different label sizes, one
-mixed decimal and scientific notation down a single axis, and a chart of four
-discrete enzymes got a connecting line that implied interpolation. None of that
-is a drawing mistake, it is the absence of a shared axis.
+Every chart on the page goes through here rather than being drawn by hand, so
+the parts a reader checks a number against - where the ticks fall, how they are
+written, which way the labels sit - are decided once and inherited.
 
-So the parts a reader checks a number against - where the ticks fall, how they
-are written, which way the labels sit, what the units are - are decided once,
-here, and every figure inherits them.
-
-Colour comes from CSS custom properties, not from literals, so the same figure
-serves light and dark mode and the palette stays in one file. Nothing in here
-knows what a biosensor is.
+Colour comes from CSS custom properties, never from literals, so the palette
+stays in one file. Nothing in here knows what a biosensor is.
 """
 import math
 import re
@@ -43,11 +35,9 @@ def tip(text):
 def _dash(d):
     """A dash pattern, or nothing at all - never the string 'None'.
 
-    A solid rule is requested as dash=None, and formatting that straight into
-    the attribute produced stroke-dasharray='None' on four rules across the
-    page. Browsers ignore an invalid pattern and draw the line solid, so it
-    looked right and was wrong, which is the kind of mistake only a test for
-    the word None in the markup catches.
+    A solid rule is requested as dash=None. Formatted straight into the
+    attribute that yields stroke-dasharray='None', which browsers ignore and
+    draw solid: wrong, and invisible without a test for the word in the markup.
     """
     return " stroke-dasharray='%s'" % d if d else ""
 
@@ -163,10 +153,8 @@ def _log_fmt(ticks):
 def nice_linear(lo, hi, target=5):
     """Ticks at a round step covering [lo, hi], between 3 and 8 of them.
 
-    An empty list for an inverted range, not a single tick at the bottom. The
-    row-based figures set ylim backwards on purpose - row 0 at the top - and a
-    lone tick labelled "31.5" turned up on the axis of the forest plot because
-    this used to return [lo] for that case.
+    Empty for an inverted range rather than one tick at the bottom: the
+    row-based figures set ylim backwards on purpose, row 0 at the top.
     """
     if hi <= lo:
         return []

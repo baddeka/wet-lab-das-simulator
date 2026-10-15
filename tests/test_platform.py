@@ -1,9 +1,9 @@
 """Checks on the platform layer: diagnostic performance and panels.
 
-The panel formula is checked against the closed form rather than against itself.
-It was wrong the first time - it made panels look *better* when their markers
-were correlated, which is backwards - and the only reason that was caught is
-that the number moved the wrong way. The monotonicity check below is the guard.
+The panel formula is checked against the closed form rather than against
+itself, and separately for the sign: with equal effect sizes, correlation must
+make a panel worse, never better. An error in the quadratic form shows up in
+that monotonicity check first.
 
     python tests/test_platform.py
 """

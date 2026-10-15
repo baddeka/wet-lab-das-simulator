@@ -78,10 +78,9 @@ LEAK = re.compile(
 def leaks(html):
     """Snippets where a Python value or an unfilled format slot reached the page.
 
-    The first version of this check was `" None " not in html`, which is too
-    blunt: it fails on the English word in a caption while still missing
-    stroke-dasharray='None'. A leak is a value in a value position, so that is
-    what is matched.
+    A leak is a value in a value position, which is what the pattern matches.
+    Searching for the bare word instead trips on the English one in a caption
+    and still misses stroke-dasharray='None'.
     """
     return [html[max(0, m.start() - 40):m.end() + 40]
             for m in LEAK.finditer(html)]
@@ -673,11 +672,10 @@ def enzyme_charts(d, biomarker):
 def positioning_legend(rows):
     """Describe only the module types the chart actually draws.
 
-    The first version of this legend named both types and both constants. No
-    type B row has ever been drawn - the only type B protein in the library with
-    a published Kd is BetI, and choline has no clinical distribution to plot it
-    against - so a reader was sent hunting for a colour that is not on the page.
-    The absence is itself the finding, so it gets said rather than papered over.
+    No type B row has ever been drawn: the only type B protein in the library
+    with a published Kd is BetI, and choline has no clinical distribution to
+    plot it against. The absence is itself a finding, so it is stated rather
+    than left as a colour missing from the legend.
     """
     present = sorted({r["module_type"] for r in rows})
     if present == ["A"]:
@@ -727,11 +725,9 @@ def stat_tiles(d):
 def library_table(d):
     """The full matrix, with the rejections folded away by default.
 
-    All 52 rows used to be open, and the table alone was about three quarters of
-    the page - ten thousand pixels of mostly-identical rejections between the
-    chart and the panels. The rejections stay (they are the result), but the
-    seven rows that pass lead, and the rest sit one click away. With JavaScript
-    off every row is visible, because the fold is applied by script.
+    The rejections stay - they are the result - but the rows that pass lead and
+    the rest sit one click away. The fold is applied by script, so with
+    JavaScript off every row is visible.
     """
     rows = sorted(d["candidates"],
                   key=lambda c: ({"green": 0, "yellow": 1, "red": 2}[c["light"]],
@@ -849,12 +845,7 @@ def enzymes_section(d):
 
 
 def limits_callout(d):
-    """The hardest sentence, set as the statement it is.
-
-    This used to be the last line of a grey aside under two columns of lists,
-    reading as a footnote. It is the most load-bearing claim on the page: a
-    reader who takes nothing else away should take this.
-    """
+    """The hardest sentence, set as the statement it is rather than a footnote."""
     n_pass = d["counts"].get("green", 0) + d["counts"].get("yellow", 0)
     return ('<aside class="callout"><p class="callout-lead">No module here has '
             'been validated experimentally.</p><p class="callout-body">This is a '

@@ -5,8 +5,8 @@ insertion sites. Between them sits a module that recognises one biomarker. Anoth
 biomarker, another module, same skeleton. Colorectal cancer stays as the worked example,
 not as the project.
 
-**[Open the platform →](https://baddeka.github.io/wet-lab-das-simulator/)** ·
-[the worked example, every parameter exposed →](https://baddeka.github.io/wet-lab-das-simulator/simulator.html)
+**[Open the platform →](https://baddeka.github.io/will-it-glow/)** ·
+[the worked example, every parameter exposed →](https://baddeka.github.io/will-it-glow/simulator.html)
 
 ## Two module types
 

@@ -180,11 +180,9 @@ def eq(name):
 def _value(row):
     """What the data file says, spelled out.
 
-    This used to run every value through sig() at four figures, which turned a
-    molar mass of 113.12 into 113.1: a table of constants losing a digit of the
-    constant. The file's own text is authoritative, and only exponential
-    notation is expanded, because 8e-4 is not a form a reader checks against a
-    paper.
+    The file's own text is authoritative - rounding a constant in a table of
+    constants is how 113.12 becomes 113.1 - so only exponential notation is
+    expanded, because 8e-4 is not a form anyone checks against a paper.
     """
     raw = (row.get("value") or "").strip()
     try:

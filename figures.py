@@ -27,9 +27,7 @@ BAD = "var(--critical)"
 
 GROUP_COLOR = {"operator": A, "module": B, "chassis": C}
 
-# stage 1 returns three verdicts, not two. The first version of the forest plot
-# tested for "holds", which is the panel vocabulary, so all 27 points came out
-# red - including the ten that passed.
+# stage 1's vocabulary, which is not the panels' ("holds" / "fails")
 VERDICT_COLOR = {"pass": GOOD, "fail": BAD, "insufficient": WARN}
 VERDICT_WORD = {"pass": "passed stage 1", "fail": "failed stage 1",
                 "insufficient": "not enough reported to judge"}
@@ -753,13 +751,7 @@ EFF_AXIS = "catalytic efficiency, kcat/Km  (\u00b5M\u207b\u00b9 s\u207b\u00b9)"
 # ----------------------------------------------- where each constant sits
 
 def positioning(d):
-    """Each module's constant against the clinical range of its analyte.
-
-    The last chart on the page that drew its own axis. Nothing was wrong with
-    the picture, but it reached its ticks, its gridlines and its row labels by
-    a second route, and a second route is how two figures come to disagree
-    about what a number looks like.
-    """
+    """Each module's constant against the clinical range of its analyte."""
     rows = d.get("positioning") or []
     rows = [r for r in rows if r.get("anchor_uM") and r.get("healthy_uM")
             and r.get("sick_uM")]
@@ -836,12 +828,9 @@ LIGHT_WORD = {"green": "passes outright", "yellow": "passes once the sample is "
 def library_map(d):
     """Every module-study pair, one mark each, grouped by biomarker.
 
-    The opening figure used to be all 52 marks in one row. It carried the
-    count and nothing else: a reader learned that most of the library fails,
-    which the next sentence says anyway. Grouped by biomarker it carries the
-    shape of the result instead - that the passes are not spread thinly across
-    the library but sit on one analyte, and that two biomarkers have a module
-    and no study behind it.
+    Grouped rather than one long row, so the shape of the result is visible:
+    the passes sit on one analyte rather than spread across the library, and
+    two biomarkers have a module with no study behind it.
     """
     cands = d.get("candidates") or []
     if not cands:

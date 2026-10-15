@@ -1,28 +1,24 @@
 """Checks on the generated platform page, index.html.
 
-Each of these exists because the corresponding mistake was already made and
-found by looking at the page rather than by any test:
+What is enforced:
 
-  - the chart legend described a module type that had no row on the chart, so a
-    reader went hunting for a colour that was not there;
-  - both figures shrank at phone width until their 11px labels were a few
-    pixels tall, with no fallback;
-  - wide tables ran off the side of the screen instead of scrolling;
-  - a chart narrower than the column was stretched to fill it, taking its 11px
-    tick labels to 21px with it;
-  - one log axis read 0.001, 0.010, 0.100, 1.00, 10.0 and another mixed
-    0.0001 with 10^-5: two number formats on one ruler;
-  - a sentence pointed the reader at "section 2.6" for an argument that is in
-    2.5;
-  - stroke-dasharray='None' reached four rules, which browsers quietly draw
-    solid.
+  - a legend names only the module types its chart actually draws;
+  - every figure stops shrinking before its 11px labels become illegible, and
+    has a table fallback;
+  - wide tables and figures scroll sideways rather than running off the screen;
+  - no chart is stretched past its natural width, which would scale its type
+    with it;
+  - one number format per axis: no ruler mixing 0.0001 with 10^-5;
+  - every section and figure a sentence points at exists;
+  - no Python value or unfilled format slot reaches the markup, including
+    stroke-dasharray='None', which browsers quietly draw solid.
 
     python tests/test_page.py            fast checks, against the built page
     python tests/test_page.py --full     also rebuild and compare (minutes)
 
-The rebuild is opt-in because the screen integrates a few hundred stiff ODEs -
+The rebuild is opt-in: the screen integrates a few hundred stiff ODEs, since
 the sensitivity analysis and the scaling check each re-run the whole chain once
-per parameter - and a test nobody waits for is a test nobody runs.
+per parameter.
 """
 import collections
 import io
