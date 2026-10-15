@@ -1,0 +1,39 @@
+# Run the project's own tests.
+#
+# A .gitlab-ci.yml in the repository replaces GitLab's Auto DevOps, which is
+# what ran on the first push: it looks for an application to containerise,
+# finds a Python project with no Dockerfile and no service to start, and fails
+# all three of its jobs. There is nothing here to build into an image - the
+# pages are committed and the model is a library plus a set of scripts - so
+# what is worth running in CI is the test suite.
+
+image: python:3.12-slim
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.pip"
+
+cache:
+  key: pip-$CI_COMMIT_REF_SLUG
+  paths:
+    - .pip
+
+stages:
+  - test
+
+tests:
+  stage: test
+  before_script:
+    - pip install --disable-pip-version-check -r requirements.txt
+  script:
+    # the kinetic core: 14 legacy scripts replayed against a frozen baseline
+    # and required to match byte for byte. The three it skips are parameter
+    # sweeps that take minutes; they run locally, not on every push.
+    - python tests/test_regression.py --quick
+    # the screen: panel algebra, performance propagation, module branches
+    - python tests/test_platform.py
+    - python tests/test_branches.py
+    # the generated pages against the data they came from
+    - python tests/test_page.py
+    - python tests/test_site.py
+    # the equations in data/katex.json still match the TeX in equations.py
+    - python build_math.py --check
