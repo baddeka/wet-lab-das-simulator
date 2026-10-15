@@ -51,16 +51,38 @@ and the verdict comes from the worst point of the range.
 
 ## Running it
 
+Python 3.9 or newer, and two packages. Nothing else: no Node, no network, no build
+service. Everything the pages need is committed, including the rendered maths.
+
 ```bash
 pip install -r requirements.txt
-python build_platform.py        # the screen -> platform.json -> index.html
+
+python screen.py                # the whole screen, on the terminal - start here
+python build_platform.py        # re-run the model -> platform.json -> index.html
+python build_platform.py --page-only   # re-render the page from the saved results
 python build_site.py --sync     # the worked example -> simulator.html
-python screen.py                # the same screen, on the terminal
 python enzymes.py               # swap enzymes on one biomarker
+```
+
+`build_platform.py` integrates a few hundred stiff ODE systems - the sensitivity analysis
+and the closed-form check each re-run the whole chain once per parameter - so a full build
+takes several minutes. `--page-only` re-renders from `platform.json` in a second and
+cannot change a number.
+
+Tests, in the order they are worth running:
+
+```bash
+python tests/test_regression.py # 17 legacy scripts against a frozen baseline, byte for byte
 python tests/test_platform.py   # panel and performance maths
 python tests/test_branches.py   # module branches, loaders, refusal paths
+python tests/test_page.py       # the generated page: numbering, citations, axes, provenance
 python tests/test_site.py       # page and data agree, prose included
-python tests/test_regression.py # the frozen two-compartment baseline
+```
+
+One optional step needs Node, and only if an equation changes:
+
+```bash
+npm install katex && python build_math.py   # re-render data/katex.json
 ```
 
 ## Honest limits
@@ -155,15 +177,25 @@ exponentially, so the scheme is stable for any enzyme loading. It agrees with a 
 reference solver (`scipy` LSODA) to within 0.12 % across nine scenarios spanning four
 decades of signal.
 
-## Running it
+## Reading the pages
 
-It is a single static file with no build step and no dependencies. Open `index.html`, or
-serve the directory:
+Both pages are generated and committed, so there is nothing to build before looking at
+them. Open `index.html` directly, or serve the directory so the fonts and the maths
+stylesheet resolve:
 
 ```bash
 python -m http.server 8000
 ```
 
+`index.html` is the platform: the screen, the figures and the model write-up.
+`simulator.html` is the worked example with every parameter exposed.
+
+## Licence
+
+MIT - see [LICENSE](LICENSE). The model, the screen and the page generator are all
+covered; the fonts and KaTeX redistributed under `assets/` keep their own terms, listed
+at the bottom of the same file.
+
 ---
 
-Built for the iGEM colorectal-cancer detection project, NU-Kazakhstan.
+Built for **NU-Kazakhstan iGEM 2026**, the colorectal-cancer detection project.
